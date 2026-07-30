@@ -69,13 +69,32 @@ function App() {
   let completed = tasks.filter(task => task.completed).length;
   let remaining = total - completed;
 
+  function counter(tasks) {
+    let Total = 0, Completed = 0, Remaining = 0;
+    for (const task of tasks) {
+      Total++;
+      if (task.completed) {
+        Completed++;
+      }
+      else{
+        Remaining++;
+      }
+    }
+    return {
+      total,
+      completed,
+      remaining
+    };
+  }
+
+const stats = counter(tasks);
   return (
     <div>
       <h1>{heading}</h1>
       <div>
-        <p>Total : {total}</p>
-        <p>Completed : {completed}</p>
-        <p>Remaining : {remaining}</p>
+        <p>Total : {stats.total}</p>
+        <p>Completed : {stats.completed}</p>
+        <p>Remaining : {stats.remaining}</p>
       </div>
       <input
         type="text"
