@@ -1,5 +1,6 @@
 import { useState } from "react";
 import './App.css'
+import TaskItem from "./components/TaskItem";
 
 function App() {
   const heading = "NextTask";
@@ -71,51 +72,40 @@ function App() {
 
   return (
     <div>
-      <h1>{heading}</h1>
-      <div>
+      <h1 className="nexttask">{heading}</h1>
+      <div className="task-count">
         <p>Total : {total}</p>
         <p>Completed : {completed}</p>
         <p>Remaining : {remaining}</p>
       </div>
-      <input
-        type="text"
-        value={newTask}
-        onChange={(e) => setNewTask(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            addTask();
-          }
-        }}
-      />
 
-      <button onClick={addTask}>Add</button>
+      <div className="input-field">
+        <input
+        className="input-box"
+          type="text"
+          id="form"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              addTask();
+            }
+          }}
+        />
 
-      {tasks.map(task => {
-        return <div key={task.id}>
-          <span
-            onClick={() => toggleComplete(task.id)}
-            style={{
-              textDecoration: task.completed
-                ? "line-through"
-                : "none",
-              cursor: "pointer"
-            }}
-          >
-            {task.completed ? "✅" : "⬜"}
-            {task.title}
-          </span>
-          <button
-            onClick={() => {
-              deleteTask(task.id)
-            }}
-            style={{ cursor: "pointer" }}
-          >
-            ❌</button>
-        </div>
-      })}
+        <button className="add-btn" onClick={addTask}>+</button>
+      </div>
+
+      {tasks.map(task => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          deleteTask={deleteTask}
+          toggleComplete={toggleComplete}
+        />
+      ))}
     </div>
   );
-
 }
 
 export default App;
