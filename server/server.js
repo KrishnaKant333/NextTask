@@ -1,21 +1,49 @@
-import http from "http";
+import express from "express";
 
-const server = http.createServer((req,res)=>{
-    if(req.method === "GET" && req.url === "/"){
-        res.end("Here are your tasks");
-    }
-    else if(req.method === "POST" && req.url === "/tasks"){
-        res.end("New Task created");
-    }
-    else if(req.method === "DELETE" && req.url === "/tasks"){
-        res.end("Task Deleted");
-    }
-    else{
-        res.statusCode = 404;
-        res.end("Page not found");
-    }
+const app = express();
+
+app.use(express.json());
+
+app.get("/", (req,res)=>{
+    res.send("Hello from NextTask Backend!");
 });
 
-server.listen(5000, ()=>{
+app.get("/api/tasks", (req,res)=>{
+    res.json([
+        {
+            id:1,
+            title:'Learn React',
+            completed:false
+        },
+        {
+            id:2,
+            title:'Complete Java Assignment',
+            completed:false
+        },
+        {
+            id:3,
+            title:'Go to Gym',
+            completed:false
+        }
+    ]);
+});
+
+app.post("/api/tasks", (req,res)=>{
+    const { title } = req.body;
+
+    if(!title || title.trim() === ""){
+        return res.status(400).json({
+            message:"Task Title is required"
+        })
+    }
+    const task = {
+        id : Date.now(),
+        title: title.trim(),
+        completed:false
+    };
+    res.status(201).json(task);
+});
+
+app.listen(5000, ()=>{
     console.log("Server running on http://localhost:5000");
 });
