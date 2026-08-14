@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import './App.css'
 import TaskItem from "./components/TaskItem";
-
+import { getTasks } from "./services/taskService";
 function App() {
   const heading = "NextTask";
   const [tasks, setTasks] = useState([
@@ -65,6 +65,14 @@ function App() {
       })
     );
   }
+  
+  useEffect(()=>{
+    async function loadTasks(){
+      const data = await getTasks();
+      console.log(data);      
+    }
+    loadTasks();
+  }, []);
 
   let total = tasks.length;
   let completed = tasks.filter(task => task.completed).length;
