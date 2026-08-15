@@ -1,32 +1,16 @@
 import { useEffect, useState } from "react";
 import './App.css'
 import TaskItem from "./components/TaskItem";
-import { getTasks } from "./services/taskService";
+import { getTasks, createTask, deleteTask as deleteTaskAPI, updateTask } from "./services/taskService";
+
+
 function App() {
   const heading = "NextTask";
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Learn React",
-      completed: false
-    },
-
-    {
-      id: 2,
-      title: "Complete Java Assignment",
-      completed: false
-    },
-
-    {
-      id: 3,
-      title: "Go to Gym",
-      completed: false
-    },
-  ]);
+  const [tasks, setTasks] = useState([]);
 
   const [newTask, setNewTask] = useState("");
 
-  function addTask() {
+  async function addTask() {
     const task = newTask.trim();
     if (task === "") return;
     if (
@@ -35,41 +19,39 @@ function App() {
           t.title.toLowerCase() === task.toLowerCase()
       )
     ) return;
-    setTasks([
-      ...tasks,
-      {
-        id: Date.now(),
-        title: task,
-        completed: false
-      }
-    ]);
+    const createdTask = await createTask(task);
+    setTasks([...tasks, createdTask]);
     setNewTask("");
   }
 
-  function deleteTask(id) {
+  async function deleteTask(id) {
+    await deleteTaskAPI(id);
     setTasks(
-      tasks.filter(task => task.id !== id)
+      tasks.filter(task => task._id !== id)
     );
   }
 
-  function toggleComplete(id) {
+  async function toggleComplete(id) {
+    const task = tasks.find(task => task._id === id);
+    if(!task) return;
+    
+    const updatedTask = await updateTask(id,{
+      completed: !task.completed
+    });
+
     setTasks(
-      tasks.map(task => {
-        if (task.id === id) {
-          return {
-            ...task,
-            completed: !task.completed
-          };
-        }
-        return task;
-      })
-    );
+      tasks.map(task=>
+        task._id === id
+        ? updatedTask
+        : task
+      )
+    );      
   }
   
   useEffect(()=>{
     async function loadTasks(){
       const data = await getTasks();
-      console.log(data);      
+      setTasks(data);
     }
     loadTasks();
   }, []);
@@ -106,7 +88,7 @@ function App() {
 
       {tasks.map(task => (
         <TaskItem
-          key={task.id}
+          key={task._id}
           task={task}
           deleteTask={deleteTask}
           toggleComplete={toggleComplete}

@@ -7,7 +7,7 @@ function TaskItem({
         <div>
             <span
                 className="dlt-btn"
-                onClick={() => toggleComplete(task.id)}
+                onClick={() => toggleComplete(task._id)}
                 style={{
                     textDecoration:
                         task.completed
@@ -20,7 +20,7 @@ function TaskItem({
                 {task.title}
             </span>
             <button
-                onClick={() => deleteTask(task.id)}
+                onClick={() => deleteTask(task._id)}
             >
                 ❌
             </button>
