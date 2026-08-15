@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import './App.css'
 import TaskItem from "./components/TaskItem";
-import { getTasks, createTask, deleteTask as deleteTaskAPI, updateTask } from "./services/taskService";
+import { getTasks, createTask, deleteTask as deleteTaskAPI, updateTask as updateTaskAPI } from "./services/taskService";
 
 
 function App() {
@@ -33,28 +33,39 @@ function App() {
 
   async function toggleComplete(id) {
     const task = tasks.find(task => task._id === id);
-    if(!task) return;
-    
-    const updatedTask = await updateTask(id,{
+    if (!task) return;
+
+    const updatedTask = await updateTaskAPI(id, {
       completed: !task.completed
     });
 
     setTasks(
-      tasks.map(task=>
+      tasks.map(task =>
         task._id === id
-        ? updatedTask
-        : task
+          ? updatedTask
+          : task
       )
-    );      
+    );
   }
-  
-  useEffect(()=>{
-    async function loadTasks(){
+
+  useEffect(() => {
+    async function loadTasks() {
       const data = await getTasks();
       setTasks(data);
     }
     loadTasks();
   }, []);
+
+  async function editTask(id, title) {
+    const updatedTask = await updateTaskAPI(id, { title });
+    setTasks(
+      tasks.map(task => 
+        task._id === id
+          ? updatedTask
+          : task
+      )
+    );
+  }
 
   let total = tasks.length;
   let completed = tasks.filter(task => task.completed).length;
@@ -71,7 +82,7 @@ function App() {
 
       <div className="input-field">
         <input
-        className="input-box"
+          className="input-box"
           type="text"
           id="form"
           value={newTask}
@@ -92,6 +103,7 @@ function App() {
           task={task}
           deleteTask={deleteTask}
           toggleComplete={toggleComplete}
+          editTask={editTask}
         />
       ))}
     </div>
