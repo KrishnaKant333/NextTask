@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import "dotenv/config";
 import cors from "cors";
 
-import taskRoutes from "./routes/taskRoutes.js"
+import taskRoutes from "./routes/taskRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/tasks", taskRoutes);
+app.use("/api/projects", projectRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
@@ -21,10 +23,16 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 
+const PORT = process.env.PORT || 5000;
+
 app.get("/", (req, res) => {
-    res.send("NextTask API is Running!");
+    res.json({
+        status: "online",
+        message: "NextTask REST API is running",
+        version: "0.1.0"
+    });
 });
 
-app.listen(5000, () => {
-    console.log("Server running on http://localhost:5000");
+app.listen(PORT, () => {
+    console.log(`NextTask Server running on http://localhost:${PORT}`);
 });
