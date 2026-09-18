@@ -9,7 +9,8 @@ import {
   Edit2,
   CalendarDays,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Timer
 } from "lucide-react";
 import {
   formatFriendlyDate,
@@ -236,6 +237,14 @@ function CalendarDayModal({
                           <span className="task-pill subtasks-pill">
                             <ListChecks size={10} strokeWidth={2} />
                             {completedSubtasks}/{subtasksCount}
+                          </span>
+                        )}
+
+                        {/* Pomodoro Count */}
+                        {(task.estimatedPomodoros > 1 || task.pomodorosCompleted > 0) && (
+                          <span className="task-pill pomodoro-pill">
+                            <Timer size={10} strokeWidth={2} />
+                            {task.pomodorosCompleted || 0}/{task.estimatedPomodoros || 1}
                           </span>
                         )}
 

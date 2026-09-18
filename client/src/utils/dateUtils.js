@@ -202,3 +202,92 @@ export function addDaysToDateISO(dateInput, days = 0) {
   return formatDateISO(targetDate);
 }
 
+export const TIMELINE_BUCKET_META = {
+  overdue: {
+    id: "overdue",
+    label: "Overdue",
+    description: "Past commitments requiring attention",
+    badgeClass: "overdue"
+  },
+  today: {
+    id: "today",
+    label: "Today",
+    description: "Commitments for today",
+    badgeClass: "today"
+  },
+  tomorrow: {
+    id: "tomorrow",
+    label: "Tomorrow",
+    description: "Commitments for tomorrow",
+    badgeClass: "tomorrow"
+  },
+  this_week: {
+    id: "this_week",
+    label: "This Week",
+    description: "Scheduled within the next 7 days",
+    badgeClass: "this-week"
+  },
+  next_week: {
+    id: "next_week",
+    label: "Next Week",
+    description: "Scheduled in 8 to 14 days",
+    badgeClass: "next-week"
+  },
+  later: {
+    id: "later",
+    label: "Later",
+    description: "Scheduled beyond 2 weeks",
+    badgeClass: "later"
+  },
+  earlier: {
+    id: "earlier",
+    label: "Completed Earlier",
+    description: "Past completed commitments",
+    badgeClass: "earlier"
+  }
+};
+
+export const TIMELINE_BUCKETS_ORDER = [
+  "overdue",
+  "today",
+  "tomorrow",
+  "this_week",
+  "next_week",
+  "later",
+  "earlier"
+];
+
+/**
+ * Classifies an ISO date string into a chronological timeline bucket.
+ *
+ * @param {string|Date} dateInput
+ * @param {boolean} isCompleted
+ * @returns {string} bucket id ('overdue' | 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'later' | 'earlier')
+ */
+export function getTimelineBucket(dateInput, isCompleted = false) {
+  if (!dateInput) return "later";
+  const targetIso =
+    typeof dateInput === "string" && dateInput.length === 10
+      ? dateInput
+      : formatDateISO(dateInput);
+  if (!targetIso) return "later";
+
+  const todayIso = formatDateISO(new Date());
+
+  const [y1, m1, d1] = todayIso.split("-").map(Number);
+  const [y2, m2, d2] = targetIso.split("-").map(Number);
+
+  const t1 = Date.UTC(y1, m1 - 1, d1);
+  const t2 = Date.UTC(y2, m2 - 1, d2);
+  const diffDays = Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return isCompleted ? "earlier" : "overdue";
+  }
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  if (diffDays >= 2 && diffDays <= 7) return "this_week";
+  if (diffDays >= 8 && diffDays <= 14) return "next_week";
+  return "later";
+}
+

@@ -5,14 +5,24 @@ import cors from "cors";
 
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
+import focusSessionRoutes from "./routes/focusSessionRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+
+// Fail-fast environment validation
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET environment variable is not defined. Server cannot start.");
+  process.exit(1);
+}
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/focus-sessions", focusSessionRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {

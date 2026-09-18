@@ -1521,6 +1521,18 @@
   gap: 12px;
 }
 
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1.1fr;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -2507,4 +2519,822 @@
 .quick-add-submit-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   12. Smart Chronological Timeline View
+   ========================================================================== */
+
+.timeline-container {
+  padding: 8px 0;
+}
+
+.timeline-track {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: relative;
+}
+
+.timeline-bucket {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline-bucket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--duration-fast);
+}
+
+.timeline-bucket.is-overdue .timeline-bucket-header {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.bucket-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bucket-indicator-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bucket-indicator-node.node-overdue {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--status-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.bucket-indicator-node.node-today {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.bucket-indicator-node.node-future {
+  background: var(--bg-subtle);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-hairline);
+}
+
+.node-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+.bucket-titles-wrap {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.timeline-bucket-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.timeline-bucket.is-overdue .timeline-bucket-title {
+  color: var(--status-danger);
+}
+
+.timeline-bucket-desc {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.bucket-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.bucket-count-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-hairline);
+}
+
+.bucket-count-badge.badge-overdue {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--status-danger);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.timeline-bucket-items {
+  padding-left: 12px;
+  border-left: 1.5px solid var(--border-hairline);
+  margin-left: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline-bucket.is-overdue .timeline-bucket-items {
+  border-left-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ==========================================================================
+   13. Pomodoro Focus Timer Widget
+   ========================================================================== */
+
+.pomodoro-widget-root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pomodoro-dock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  user-select: none;
+}
+
+.pomodoro-dock-pill:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-hover);
+}
+
+.pomodoro-dock-pill.is-running {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.05);
+}
+
+.pomodoro-dock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: transform var(--duration-fast);
+}
+
+.pomodoro-dock-pill.is-running .pomodoro-dock-dot {
+  animation: pomodoroPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pomodoroPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+.pomodoro-dock-time {
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.pomodoro-dock-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all var(--duration-fast);
+  padding: 0;
+}
+
+.pomodoro-dock-action-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-active);
+}
+
+.play-icon-offset {
+  margin-left: 1px;
+}
+
+/* Popover Card */
+.pomodoro-popover-card {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 250px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pomodoro-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: 8px;
+}
+
+.popover-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.popover-clock-icon {
+  color: var(--text-tertiary);
+}
+
+.popover-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.popover-icon-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition: all var(--duration-fast);
+  padding: 0;
+}
+
+.popover-icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-active);
+}
+
+.popover-icon-btn.is-muted {
+  color: var(--status-danger);
+}
+
+/* Mode Switcher Tabs */
+.pomodoro-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--bg-input);
+  padding: 2px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-hairline);
+}
+
+.pomodoro-mode-tab {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--duration-fast);
+  white-space: nowrap;
+}
+
+.pomodoro-mode-tab:hover {
+  color: var(--text-primary);
+}
+
+.pomodoro-mode-tab.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Focal Display */
+.pomodoro-focal-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.pomodoro-focal-time {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.pomodoro-progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pomodoro-progress-fill {
+  height: 100%;
+  transition: width 0.25s ease-out;
+}
+
+.pomodoro-cycles-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  padding-top: 2px;
+}
+
+.pomodoro-cycle-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cycle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hairline);
+  transition: all var(--duration-fast);
+}
+
+.cycle-dot.completed {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.cycle-dot.current {
+  border-color: var(--accent-primary);
+  background: var(--accent-subtle);
+}
+
+/* Controls Row */
+.pomodoro-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomodoro-primary-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.pomodoro-primary-btn:hover {
+  opacity: 0.9;
+}
+
+.pomodoro-primary-btn.is-running {
+  background: rgba(244, 63, 94, 0.85);
+}
+
+.pomodoro-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.pomodoro-secondary-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
+}
+
+/* 14. Milestone 5.2: Task-Bound Focus Sessions & Target Pomodoros */
+
+/* Docked Pill Bound Task Display */
+.pomodoro-dock-pill.has-bound-task {
+  padding: 3px 10px 3px 8px;
+}
+
+.pomodoro-dock-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.dock-task-separator {
+  opacity: 0.35;
+  font-size: 0.6rem;
+}
+
+.dock-task-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+/* Bound Task Popover Banner */
+.pomodoro-bound-task-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid #f43f5e;
+  border-radius: var(--radius-sm);
+}
+
+.bound-task-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bound-task-caption {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #f43f5e;
+}
+
+.bound-task-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bound-task-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.bound-task-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+}
+
+.bound-task-pomodoros {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-hairline);
+}
+
+.bound-task-unbind-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all var(--duration-fast);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.bound-task-unbind-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* Task Item: Focus Active State & Badges */
+.task-row.is-focus-active {
+  border-color: rgba(244, 63, 94, 0.4);
+  background: rgba(244, 63, 94, 0.04);
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.15);
+}
+
+.row-action-btn.focus-action-btn:hover {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+.row-action-btn.focus-action-btn.active {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.2);
+}
+
+.meta-pomodoro-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.meta-pomodoro-pill.all-done {
+  color: var(--status-success);
+  background: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.day-agenda-item .task-pill.pomodoro-pill {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+/* 15. Milestone 5.3: Focus Analytics & Daily Metrics View */
+
+.popover-icon-btn.active {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+.pomodoro-stats-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 150ms ease-out;
+}
+
+/* 3-Card KPI Summary Grid */
+.focus-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.focus-kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.focus-kpi-card .kpi-label {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.focus-kpi-card .kpi-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.focus-kpi-card .kpi-value.streak-val {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #fb923c;
+}
+
+.streak-flame-icon {
+  color: #f97316;
+}
+
+/* Section Wrappers */
+.focus-section-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.focus-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.focus-section-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.focus-empty-notice {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  padding: 6px 8px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-xs);
+  border: 1px dashed var(--border-hairline);
+  text-align: center;
+}
+
+/* Project Distribution Bars */
+.focus-distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.focus-distribution-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.distribution-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+}
+
+.distribution-proj-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.distribution-time {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.distribution-bar-track {
+  height: 4px;
+  background: var(--bg-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.distribution-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+
+/* Recent Focus Activity Feed */
+.focus-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.focus-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  font-size: 0.7rem;
+}
+
+.recent-item-task {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 130px;
+}
+
+.recent-item-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.recent-duration-pill {
+  padding: 1px 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Return to Timer Button */
+.focus-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.focus-back-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
 }

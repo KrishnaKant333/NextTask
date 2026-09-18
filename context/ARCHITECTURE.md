@@ -28,17 +28,25 @@ NextTask/
 │   └── .oxlintrc.json         # Oxlint static analysis configuration
 ├── server/                    # Backend REST API service
 │   ├── controllers/           # Request handlers and business logic
+│   │   ├── authController.js    # Authentication handlers (register, login, getMe)
+│   │   ├── focusSessionController.js # Pomodoro focus tracking and daily metrics
 │   │   ├── projectController.js # CRUD handlers for projects + safe task dissociation
 │   │   └── taskController.js    # CRUD handlers for tasks with project populate/filter
+│   ├── middleware/            # Express request middleware
+│   │   └── authMiddleware.js    # JWT verification, protect route guard, fail-fast JWT_SECRET check
 │   ├── models/                # Mongoose schema definitions
+│   │   ├── FocusSession.js    # Focus session schema (taskId, projectId, duration, mode)
 │   │   ├── Project.js         # Project schema & model definition
-│   │   └── Task.js            # Task schema with projectId ref, tags, subtasks
+│   │   ├── Task.js            # Task schema with projectId ref, tags, subtasks, pomodoro metrics
+│   │   └── User.js            # User schema with salted bcrypt password hashing and email index
 │   ├── routes/                # Express route declarations
+│   │   ├── authRoutes.js      # Auth endpoint mappings (/api/auth)
+│   │   ├── focusSessionRoutes.js # Focus session endpoints (/api/focus-sessions)
 │   │   ├── projectRoutes.js   # Project endpoint mappings (/api/projects)
 │   │   └── taskRoutes.js      # Task endpoint mappings (/api/tasks)
 │   ├── .env                   # Server environment variables (local)
-│   ├── .env.example           # Environment template for server setup
-│   ├── package.json           # Clean server dependencies (Express 5, Mongoose 9)
+│   ├── .env.example           # Environment template for server setup (PORT, MONGO_URI, JWT_SECRET, JWT_EXPIRES_IN)
+│   ├── package.json           # Server dependencies (Express 5, Mongoose 9, bcryptjs, jsonwebtoken)
 │   └── server.js              # Express app initialization, Mongo connection, route mounting
 ├── context/                   # Project memory, architecture & guidelines (this folder)
 └── specs/                     # Master roadmap, system audits & feature specs
@@ -249,7 +257,31 @@ sequenceDiagram
 
 ---
 
-## 7. Current Technical Limitations & Architectural Debt
+## 7. Authentication Architecture & Legacy Task Ownership Strategy
+
+### 7.1 Authentication Architecture (Milestone 6.1)
+- **Stateless Bearer JWT**: Authenticated endpoints utilize signed JSON Web Tokens (`jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn })`).
+- **Fail-Fast Environment Security**: The server and auth middleware check for `process.env.JWT_SECRET` during startup and execution. If missing, the server halts immediately (`process.exit(1)`) to prevent fallback to insecure or predictable development keys. Secrets are kept in `.env` (gitignored).
+- **User Identity & Password Safety**:
+  - Passwords hashed with `bcryptjs` (salt rounds: 10) in Mongoose `pre("save")`.
+  - Automatic exclusion of password hash via `userSchema.set("toJSON", { transform: ... delete ret.password })` and controller query projections (`select("-password")`).
+  - Emails normalized (trimmed and lowercased) with database-enforced unique indexing.
+- **Unified Error Responses**: Authentication errors return `{ message: "Invalid email or password" }` to prevent account enumeration attacks.
+- **Token Expiration**: Default expiration is explicitly set to `7d` (configurable via `JWT_EXPIRES_IN`). Expired tokens are caught and flagged with `{ message: "Not authorized, token expired", code: "TOKEN_EXPIRED" }` to enable predictable client refresh/re-auth flows.
+
+### 7.2 Legacy Task Ownership Problem & Safe Migration Strategy
+- **The Problem**: In Stages 0–5, the application operated as a single-tenant system without user accounts. Existing `Task`, `Project`, and `FocusSession` documents currently have no `user` foreign key.
+- **No Silent Reassignment or Deletion**: When multi-tenant isolation is activated in Milestone 6.2, unowned tasks must not be silently purged or arbitrarily exposed to random users.
+- **Controlled Migration Strategy (Planned for Milestone 6.2)**:
+  1. A standalone migration script (`server/scripts/migrateLegacyTasksToUser.js`) will query unassigned documents (`{ user: { $exists: false } }`).
+  2. The script allows an operator/developer to assign all existing development records to a specified development account (e.g., via `--email admin@example.com` or `--create-dev-user`).
+  3. Schema updates will enforce `user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true }`.
+  4. Task, Project, and FocusSession endpoints will then apply the `protect` middleware, ensuring all database reads, writes, and deletions are scoped strictly to `req.user._id`.
+- **Deferred Frontend UI**: Frontend authentication UI (auth forms, session state, token interceptors) is cleanly deferred to Milestone 6.3 so backend isolation can be verified independently first.
+
+---
+
+## 8. Current Technical Limitations & Architectural Debt
 
 1. **Global Title Uniqueness Bottleneck**:
    - `taskController.js` checks `Task.findOne({ title: title.trim() })`. If any task in the entire database has the title "Meeting", no other task can use that title. In multi-user or categorized contexts, this will be scoped per-project / per-user in subsequent stages.

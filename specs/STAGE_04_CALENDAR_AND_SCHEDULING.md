@@ -2,7 +2,7 @@
 
 - **Feature ID**: `STAGE-04`
 - **Stage**: Stage 4 — Calendar & Scheduling
-- **Status**: `IN PROGRESS`
+- **Status**: `COMPLETED`
 - **Author**: Lead Software Architect & Senior Full-Stack Engineer
 - **Created Date**: 2026-09-18
 - **Target Completion**: 2026-09-18
@@ -28,7 +28,7 @@ Stage 4 introduces dedicated **Temporal Productivity Views**, starting with an i
 | :--- | :--- | :--- | :--- |
 | **Milestone 4.1** | View Switcher Foundation & Interactive Month Calendar | Header view toggle (List vs Calendar), 7x5 month grid calendar with custom date math, task chip rendering by due date with project colors, month navigation (prev/next/today), click-to-schedule modal trigger. | **COMPLETED** |
 | **Milestone 4.2** | Calendar Day Detail & Interactive Task Rescheduling | Date cell detail popover/drawer, HTML5 drag-and-drop task date rescheduling, quick date assignment presets (+1d, +7d, custom), overdue highlight indicators. | **COMPLETED** |
-| **Milestone 4.3** | "Upcoming" & Smart Timeline View | Sidebar "Upcoming" focus view (next 7 days timeline breakdown), week agenda layout, timeline metrics. | **NEXT MILESTONE** |
+| **Milestone 4.3** | "Upcoming" & Smart Timeline View | Sidebar "Upcoming" focus view (next 7 days timeline breakdown), week agenda layout, timeline metrics. | **COMPLETED** |
 
 ---
 
@@ -109,3 +109,13 @@ Stage 4 introduces dedicated **Temporal Productivity Views**, starting with an i
 - [x] Automated test script `scratch/test_milestone_4_2.js` executed and passed.
 - [x] Clean oxlint linting (0 warnings, 0 errors across 13 files).
 - [x] Production build clean in 1.55s.
+
+### Milestone 4.3 (COMPLETED)
+- [x] Added `getTimelineBucket`, `TIMELINE_BUCKET_META`, and `TIMELINE_BUCKETS_ORDER` to `dateUtils.js`.
+- [x] Added "Upcoming" navigation button with `CalendarDays` icon and live badge count to `Sidebar.jsx`.
+- [x] Built `TimelineView.jsx` component rendering chronologically grouped buckets (Overdue, Today, Tomorrow, This Week, Next Week, Later, Earlier).
+- [x] Integrated `selectedView === "upcoming"` in `App.jsx`, computing `taskCounts.upcoming` and rendering `<TimelineView>`.
+- [x] Styled timeline sections, indicator nodes, hairline tracks, and overdue warning badges in `App.css`.
+- [x] Automated test script `scratch/test_milestone_4_3.js` passed with 100% assertions satisfied.
+- [x] `oxlint` clean (0 warnings, 0 errors across 14 files).
+- [x] Production build clean in 2.42s.

@@ -61,18 +61,31 @@
 | Milestone 3.4: Subtasks & Checklist Engine | `COMPLETED` | Yes | Subtask schema, inline & modal checklists, progress indicators, atomic toggle route |
 | Milestone 3.5: Advanced Organization Polish | `COMPLETED` | Yes | Floating BulkActionBar, multi-task selection, batch update/delete, project progress card, A-Z sort |
 
-### Stage 4: Calendar & Scheduling (IN PROGRESS)
+### Stage 4: Calendar & Scheduling (COMPLETED)
 | Milestone / Item | Status | Verified In Code | Notes |
 | :--- | :--- | :--- | :--- |
 | Milestone 4.1: View Switcher & Month Calendar | `COMPLETED` | Yes | View Switcher (List/Calendar), native dateUtils math, interactive 7x5/7x6 month grid, task chips, date click scheduling |
 | Milestone 4.2: Calendar Day Detail & Task Rescheduling | `COMPLETED` | Yes | CalendarDayModal agenda, in-place completion toggle, HTML5 drag-and-drop rescheduling, quick reschedule presets, overdue indicators |
-| Milestone 4.3: "Upcoming" & Smart Timeline View | `PLANNED` | No | Sidebar upcoming view, 7-day timeline |
+| Milestone 4.3: "Upcoming" & Smart Timeline View | `COMPLETED` | Yes | Sidebar Upcoming focus item, TimelineView chronological grouping (Overdue, Today, Tomorrow, This Week, Next Week, Later) |
+
+### Stage 5: Time Tracking & Pomodoro Focus Timer (COMPLETED)
+| Milestone / Item | Status | Verified In Code | Notes |
+| :--- | :--- | :--- | :--- |
+| Milestone 5.1: Pomodoro Focus Timer Foundation | `COMPLETED` | Yes | Header docked pill, expandable popover, timestamp reconciliation, localStorage persistence, Web Audio chime |
+| Milestone 5.2: Task-Bound Focus Sessions & Estimates | `COMPLETED` | Yes | Task estimated/completed Pomodoro schema, atomic PATCH increment, 1-click focus trigger, popover banner, active row highlight |
+| Milestone 5.3: Time Tracking Log & Daily Focus Metrics | `COMPLETED` | Yes | FocusSession model, /today metrics aggregation, daily streaks, project distribution bars, popover stats view |
+
+### Stage 6: User Authentication & Multi-Tenancy (ACTIVE)
+| Milestone / Item | Status | Verified In Code | Notes |
+| :--- | :--- | :--- | :--- |
+| Milestone 6.1: User Model, Password Security & JWT Auth API | `COMPLETED` | Yes | User schema, bcryptjs hashing, JWT generation/verification, fail-fast JWT_SECRET check, register/login/me endpoints, isolated test suite |
+| Milestone 6.2: Multi-Tenant Scoping & Task Ownership Migration | `PLANNED` | No | Add `user` ObjectId ref to Task, Project, FocusSession; query scoping; safe migration script for legacy tasks |
+| Milestone 6.3: Frontend Auth UI & Protected Session State | `PLANNED` | No | Auth modal / pages, token storage, authContext, route guards, automatic header token injection |
+| Milestone 6.4: Cross-Device Session Sync & Profile Customization | `PLANNED` | No | Profile editing, avatar, password change, token refresh / revocation |
 
 ### Long-Term Milestones
 | Milestone / Item | Status | Verified In Code | Notes |
 | :--- | :--- | :--- | :--- |
-| Pomodoro Timer & Time Tracking | `DEFERRED` | No | Scheduled for Stage 5 |
-| User Authentication & Account Isolation | `DEFERRED` | No | Scheduled for Stage 6 |
 | Productivity Analytics Dashboard | `DEFERRED` | No | Scheduled for Stage 7 |
 | Team Collaboration & WebSockets | `DEFERRED` | No | Scheduled for Stage 8 |
 | AI Productivity Assistant | `DEFERRED` | No | Scheduled for Stage 9 |

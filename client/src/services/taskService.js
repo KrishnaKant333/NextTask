@@ -81,3 +81,13 @@ export async function bulkDeleteTasks(ids) {
         throw new Error(message);
     }
 }
+
+export async function incrementTaskPomodoro(id) {
+    try {
+        const response = await axios.patch(`${API_URL}/${id}/pomodoro`);
+        return response.data;
+    } catch (error) {
+        const message = error.response?.data?.message || "Failed to increment pomodoro";
+        throw new Error(message);
+    }
+}

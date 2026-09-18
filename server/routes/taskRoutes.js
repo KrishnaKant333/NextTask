@@ -7,7 +7,8 @@ import {
     deleteTask,
     toggleSubtask,
     bulkUpdateTasks,
-    bulkDeleteTasks
+    bulkDeleteTasks,
+    incrementTaskPomodoro
 } from "../controllers/taskController.js";
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post("/bulk-delete", bulkDeleteTasks);
 router.put("/:id", updateTask);
 router.delete("/:id", deleteTask);
 router.patch("/:id/subtasks/:subtaskId/toggle", toggleSubtask);
+router.patch("/:id/pomodoro", incrementTaskPomodoro);
 
 export default router;

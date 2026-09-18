@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Calendar, Pencil, Trash2, ListChecks, ChevronDown, ChevronRight } from "lucide-react";
+import { Check, Calendar, Pencil, Trash2, ListChecks, ChevronDown, ChevronRight, Timer } from "lucide-react";
 
 function formatDueDate(dueDate, completed) {
   if (!dueDate) return null;
@@ -42,7 +42,9 @@ function TaskItem({
   onToggleSubtask,
   isSelected = false,
   onToggleSelect,
-  selectionMode = false
+  selectionMode = false,
+  onStartFocus,
+  isFocusedTask = false
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -58,7 +60,7 @@ function TaskItem({
 
   return (
     <div className={`task-item-wrapper ${isExpanded ? "expanded" : ""}`}>
-      <div className={`task-row ${task.completed ? "is-completed" : ""} ${isSelected ? "is-selected" : ""}`}>
+      <div className={`task-row ${task.completed ? "is-completed" : ""} ${isSelected ? "is-selected" : ""} ${isFocusedTask ? "is-focus-active" : ""}`}>
         {/* Row Selection Checkbox */}
         <button
           type="button"
@@ -154,6 +156,18 @@ function TaskItem({
             </span>
           )}
 
+          {(task.estimatedPomodoros > 1 || task.pomodorosCompleted > 0) && (
+            <span
+              className={`meta-pomodoro-pill ${task.pomodorosCompleted >= (task.estimatedPomodoros || 1) ? "all-done" : ""}`}
+              title={`Focus Sessions: ${task.pomodorosCompleted || 0} of ${task.estimatedPomodoros || 1} Pomodoros completed`}
+            >
+              <Timer size={11} strokeWidth={2.2} />
+              <span>
+                {task.pomodorosCompleted || 0}/{task.estimatedPomodoros || 1}
+              </span>
+            </span>
+          )}
+
           <span className={`priority-tag priority-${priority}`}>
             {priority}
           </span>
@@ -161,6 +175,21 @@ function TaskItem({
 
         {/* Row Hover Actions */}
         <div className="task-actions">
+          {onStartFocus && !task.completed && (
+            <button
+              type="button"
+              className={`row-action-btn focus-action-btn ${isFocusedTask ? "active" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartFocus(task);
+              }}
+              aria-label={isFocusedTask ? "Currently in focus session" : "Start focus session for this task"}
+              title={isFocusedTask ? "Active focus task" : "Start Pomodoro focus session"}
+            >
+              <Timer size={13} strokeWidth={2} />
+            </button>
+          )}
+
           <button
             type="button"
             className="row-action-btn"

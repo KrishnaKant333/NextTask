@@ -37,7 +37,18 @@ const taskSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         }
-    }]
+    }],
+    estimatedPomodoros: {
+        type: Number,
+        default: 1,
+        min: 1,
+        max: 20
+    },
+    pomodorosCompleted: {
+        type: Number,
+        default: 0,
+        min: 0
+    }
 }, { timestamps: true });
 
 const Task = mongoose.model("Task", taskSchema);

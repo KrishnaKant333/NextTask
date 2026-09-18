@@ -175,3 +175,52 @@ Use Vanilla CSS leveraging native CSS custom properties (variables) for tokens, 
 ### Consequences
 - Requires disciplined naming conventions and central maintenance of tokens in `index.css`.
 - Must resolve the existing `#root` style conflict between `index.css` and `App.css`.
+
+---
+
+## ADR-008: Timestamp-Based Reconciliation & Native Web Audio for Pomodoro Engine
+- **Date**: 2026-09-18 (Milestone 5.1)
+- **Status**: ACCEPTED
+
+### Context
+Browser timers based exclusively on `setInterval` suffer from heavy background tab throttling, leading to multi-minute clock drift when users work in other applications. Additionally, external audio files (`.mp3` / `.wav`) introduce network overhead, potential 404s, and autoplay permission issues.
+
+### Decision
+1. Drive the countdown engine using epoch timestamps (`Date.now()` vs `targetEndTime`) rather than naive interval decrements, reconciling remaining time on every sub-second tick and on `visibilitychange` / `window.onfocus` events.
+2. Synthesize audio alerts directly using the browser-native Web Audio API (`AudioContext` with sine wave oscillator and exponential gain decay), requiring zero external audio assets.
+3. Persist active running target, remaining duration, mode, cycle counts, and sound preference to `localStorage`.
+
+### Reasoning
+- Eliminates clock drift completely: returning to a backgrounded tab immediately recalculates remaining seconds to exact real-world time.
+- Guarantees zero asset failure for audio cues with an ultra-lightweight footprint (~1.5 KB).
+- Ensures seamless state recovery on browser reload or view switching.
+
+### Consequences
+- Requires guarding zero-reach logic against duplicate triggers when a timer completes while backgrounded.
+- Web Audio `AudioContext` must be initialized upon user gesture (Start click) to adhere to browser autoplay policies.
+
+---
+
+## ADR-009: Stateless JWT Authentication with Bcryptjs and Mandatory Environment Secret
+- **Date**: 2026-09-18 (Milestone 6.1)
+- **Status**: ACCEPTED
+
+### Context
+Stage 6 introduces multi-tenancy and user authentication. Securing user accounts requires resistant password hashing and an authentication token mechanism that is both performant and compatible across varied deployment platforms (e.g. Windows dev environments without C++ compiler toolchains). Additionally, insecure fallback secrets (e.g. `process.env.JWT_SECRET || "default_dev_secret"`) create critical security vulnerabilities if deployed accidentally.
+
+### Decision
+1. **Password Hashing**: Use `bcryptjs` with salt round work factor 10. `bcryptjs` is pure JavaScript, eliminating native build dependencies (`node-gyp`, Python, MSVC C++ tools on Windows) while maintaining cryptographically secure blowfish key stretching.
+2. **Stateless JWT**: Issue signed JSON Web Tokens (`jsonwebtoken`) containing `{ id: user._id }` with an explicit expiration (`7d` default, configurable via `JWT_EXPIRES_IN`).
+3. **Fail-Fast Environment Security**: Require `process.env.JWT_SECRET`. Both server boot (`server.js`) and authentication middleware (`authMiddleware.js`) strictly validate the presence of `JWT_SECRET`. If missing or empty, execution halts immediately with a fatal error. Never permit hardcoded fallback secrets.
+4. **Password Exclusion**: Enforce password stripping via Mongoose `userSchema.set("toJSON", { transform: ... delete ret.password })` and controller projections (`.select("-password")`), guaranteeing password hashes are never leaked in API payloads.
+5. **Unified Credential Responses**: On failed authentication, return a single generic response (`"Invalid email or password"`) with status 401 to prevent user enumeration.
+
+### Alternatives Considered
+- *Native `bcrypt`*: Requires C++ node-gyp build tools which frequently fail during installation on Windows environments.
+- *Session cookies with express-session / Redis*: Adds stateful storage dependencies and complicates decoupled API deployments across mobile or third-party clients.
+- *Hardcoded fallback secret*: Catastrophic security vulnerability if left active in staging/production.
+
+### Consequences
+- All subsequent protected routes must extract `req.headers.authorization` Bearer tokens.
+- Tasks, Projects, and FocusSessions must be scoped to `req.user._id` in Milestone 6.2.
+

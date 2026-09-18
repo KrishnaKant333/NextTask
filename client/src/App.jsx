@@ -8,6 +8,8 @@ import Sidebar from "./components/Sidebar";
 import BulkActionBar from "./components/BulkActionBar";
 import CalendarView from "./components/CalendarView";
 import CalendarDayModal from "./components/CalendarDayModal";
+import TimelineView from "./components/TimelineView";
+import PomodoroTimer from "./components/PomodoroTimer";
 import { formatDateISO } from "./utils/dateUtils";
 import {
   getTasks,
@@ -16,7 +18,8 @@ import {
   updateTask as updateTaskAPI,
   toggleSubtask as toggleSubtaskAPI,
   bulkUpdateTasks as bulkUpdateTasksAPI,
-  bulkDeleteTasks as bulkDeleteTasksAPI
+  bulkDeleteTasks as bulkDeleteTasksAPI,
+  incrementTaskPomodoro as incrementTaskPomodoroAPI
 } from "./services/taskService";
 import {
   getProjects,
@@ -24,6 +27,10 @@ import {
   updateProject as updateProjectAPI,
   deleteProject as deleteProjectAPI
 } from "./services/projectService";
+import {
+  getTodayFocusMetrics as getTodayFocusMetricsAPI,
+  logFocusSession as logFocusSessionAPI
+} from "./services/focusSessionService";
 import {
   Plus,
   Search,
@@ -78,6 +85,72 @@ function App() {
   const [editingProject, setEditingProject] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Active focus task binding
+  const [activeFocusTaskId, setActiveFocusTaskId] = useState(() => {
+    return localStorage.getItem("nexttask_active_focus_task_id") || null;
+  });
+  const [focusTimerSignal, setFocusTimerSignal] = useState(0);
+
+  useEffect(() => {
+    if (activeFocusTaskId) {
+      localStorage.setItem("nexttask_active_focus_task_id", activeFocusTaskId);
+    } else {
+      localStorage.removeItem("nexttask_active_focus_task_id");
+    }
+  }, [activeFocusTaskId]);
+
+  const activeFocusTask = useMemo(() => {
+    if (!activeFocusTaskId) return null;
+    return tasks.find((t) => t._id === activeFocusTaskId) || null;
+  }, [tasks, activeFocusTaskId]);
+
+  function handleStartFocus(task) {
+    setActiveFocusTaskId(task._id);
+    setFocusTimerSignal(Date.now());
+    showToast(`Focus session started for "${task.title}"`, "info");
+  }
+
+  function handleUnbindFocusTask() {
+    setActiveFocusTaskId(null);
+  }
+
+  async function handleCompletePomodoroForTask(taskId) {
+    try {
+      const updated = await incrementTaskPomodoroAPI(taskId);
+      setTasks((prev) => prev.map((t) => (t._id === taskId ? updated : t)));
+      const completedCount = updated.pomodorosCompleted;
+      const targetCount = updated.estimatedPomodoros || 1;
+      if (completedCount >= targetCount) {
+        showToast(`Target reached! "${updated.title}" (${completedCount}/${targetCount} Pomodoros)`, "success");
+      } else {
+        showToast(`Pomodoro logged for "${updated.title}" (${completedCount}/${targetCount})`, "success");
+      }
+    } catch (err) {
+      showToast(err.message || "Failed to log pomodoro for task", "error");
+    }
+  }
+
+  // Focus Metrics & Session Logging
+  const [focusMetrics, setFocusMetrics] = useState(null);
+
+  async function handleRefreshFocusMetrics() {
+    try {
+      const data = await getTodayFocusMetricsAPI();
+      if (data) setFocusMetrics(data);
+    } catch {
+      // Ignore background fetch errors
+    }
+  }
+
+  async function handleLogFocusSession(sessionData) {
+    try {
+      await logFocusSessionAPI(sessionData);
+      await handleRefreshFocusMetrics();
+    } catch (err) {
+      console.error("Failed to log focus session:", err);
+    }
+  }
+
   function showToast(message, type = "info") {
     setToast({ message, type });
   }
@@ -93,12 +166,14 @@ function App() {
     async function load() {
       try {
         setLoading(true);
-        const [tasksData, projectsData] = await Promise.all([
+        const [tasksData, projectsData, metricsData] = await Promise.all([
           getTasks(),
-          getProjects()
+          getProjects(),
+          getTodayFocusMetricsAPI().catch(() => null)
         ]);
         setTasks(Array.isArray(tasksData) ? tasksData : []);
         setProjects(Array.isArray(projectsData) ? projectsData : []);
+        if (metricsData) setFocusMetrics(metricsData);
       } catch (err) {
         showToast(err.message || "Failed to load workspace data", "error");
       } finally {
@@ -197,6 +272,7 @@ function App() {
       inbox: 0,
       all: 0,
       today: 0,
+      upcoming: 0,
       projects: {}
     };
 
@@ -215,6 +291,7 @@ function App() {
       }
 
       if (t.dueDate) {
+        counts.upcoming += 1;
         const dueStr = new Date(t.dueDate).toISOString().split("T")[0];
         if (dueStr <= todayStr) {
           counts.today += 1;
@@ -265,6 +342,9 @@ function App() {
     try {
       await deleteTaskAPI(id);
       setTasks((prev) => prev.filter((t) => t._id !== id));
+      if (activeFocusTaskId === id) {
+        setActiveFocusTaskId(null);
+      }
       showToast("Task deleted", "info");
     } catch (err) {
       showToast(err.message || "Failed to delete task", "error");
@@ -279,6 +359,10 @@ function App() {
     try {
       const updated = await updateTaskAPI(id, { completed: !task.completed });
       setTasks((prev) => prev.map((t) => (t._id === id ? updated : t)));
+      if (activeFocusTaskId === id && !task.completed) {
+        setActiveFocusTaskId(null);
+        showToast(`Focus task "${task.title}" completed!`, "success");
+      }
     } catch (err) {
       showToast(err.message || "Failed to update task", "error");
     }
@@ -467,6 +551,9 @@ function App() {
     try {
       await bulkDeleteTasksAPI(ids);
       setTasks((prev) => prev.filter((t) => !selectedTaskIds.has(t._id)));
+      if (selectedTaskIds.has(activeFocusTaskId)) {
+        setActiveFocusTaskId(null);
+      }
       setSelectedTaskIds(new Set());
       showToast(`Deleted ${ids.length} tasks`, "info");
     } catch (err) {
@@ -508,6 +595,13 @@ function App() {
     if (selectedView === "all") {
       return { title: "All Tasks", subtitle: "Comprehensive workspace overview", color: null };
     }
+    if (selectedView === "upcoming") {
+      return {
+        title: "Upcoming",
+        subtitle: "Chronological schedule across upcoming days",
+        color: "#38bdf8"
+      };
+    }
     const proj = projects.find((p) => p._id === selectedView);
     if (proj) {
       return {
@@ -548,6 +642,8 @@ function App() {
         const dueStr = new Date(t.dueDate).toISOString().split("T")[0];
         return dueStr <= todayStr;
       });
+    } else if (selectedView === "upcoming") {
+      result = result.filter((t) => Boolean(t.dueDate));
     } else if (selectedView !== "all") {
       // Specific project ID
       result = result.filter((t) => {
@@ -675,6 +771,18 @@ function App() {
             </div>
 
             <div className="header-status">
+              {/* Pomodoro Focus Timer Widget */}
+              <PomodoroTimer
+                onToast={showToast}
+                activeTask={activeFocusTask}
+                onUnbindTask={handleUnbindFocusTask}
+                onCompletePomodoroForTask={handleCompletePomodoroForTask}
+                forceOpenSignal={focusTimerSignal}
+                focusMetrics={focusMetrics}
+                onLogFocusSession={handleLogFocusSession}
+                onRefreshFocusMetrics={handleRefreshFocusMetrics}
+              />
+
               {/* View Mode Switcher (List vs Calendar) */}
               <div className="view-mode-switcher" role="group" aria-label="View mode">
                 <button
@@ -909,7 +1017,7 @@ function App() {
             </div>
           </section>
 
-          {/* 4. Structured Task List or Calendar Container */}
+          {/* 4. Structured Task List, Calendar, or Timeline Container */}
           {activeViewMode === "calendar" ? (
             <CalendarView
               tasks={filteredAndSortedTasks}
@@ -917,6 +1025,30 @@ function App() {
               onInspectDay={(dateStr) => setInspectingDayDate(dateStr)}
               onRescheduleTask={handleRescheduleTask}
             />
+          ) : selectedView === "upcoming" ? (
+            loading ? (
+              <main className="task-container timeline-container" aria-label="Upcoming Timeline">
+                <div className="list-empty-state">
+                  <p className="empty-title">Loading timeline...</p>
+                </div>
+              </main>
+            ) : (
+              <TimelineView
+                tasks={filteredAndSortedTasks}
+                deleteTask={handleDeleteTask}
+                toggleComplete={handleToggleComplete}
+                onToggleSubtask={handleToggleSubtask}
+                openEditModal={(t) => setEditingTask(t)}
+                onSelectTag={(tag) =>
+                  setSelectedTagFilter((prev) => (prev === tag ? "" : tag))
+                }
+                selectedTaskIds={selectedTaskIds}
+                onToggleSelect={handleToggleSelectTask}
+                selectionMode={selectedTaskIds.size > 0}
+                onStartFocus={handleStartFocus}
+                focusedTaskId={activeFocusTaskId}
+              />
+            )
           ) : (
             <main className="task-container" aria-label="Tasks">
               {loading ? (
@@ -961,6 +1093,8 @@ function App() {
                       isSelected={selectedTaskIds.has(task._id)}
                       onToggleSelect={handleToggleSelectTask}
                       selectionMode={selectedTaskIds.size > 0}
+                      onStartFocus={handleStartFocus}
+                      isFocusedTask={task._id === activeFocusTaskId}
                     />
                   ))}
                 </div>

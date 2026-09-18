@@ -30,7 +30,7 @@ export async function getTasks(req, res) {
 
 export async function createTask(req, res) {
     try {
-        const { title, priority, dueDate, projectId, tags, subtasks } = req.body;
+        const { title, priority, dueDate, projectId, tags, subtasks, estimatedPomodoros } = req.body;
 
         if (!title || title.trim() === "") {
             return res.status(400).json({
@@ -51,13 +51,18 @@ export async function createTask(req, res) {
                 .filter(s => s.title.length > 0)
             : [];
 
+        const validEstimatedPomodoros = typeof estimatedPomodoros === "number" && !isNaN(estimatedPomodoros)
+            ? Math.min(20, Math.max(1, Math.round(estimatedPomodoros)))
+            : 1;
+
         const task = await Task.create({
             title: title.trim(),
             priority: priority || "medium",
             dueDate: dueDate || null,
             projectId: projectId || null,
             tags: formattedTags,
-            subtasks: formattedSubtasks
+            subtasks: formattedSubtasks,
+            estimatedPomodoros: validEstimatedPomodoros
         });
 
         const populatedTask = await Task.findById(task._id).populate("projectId", "name color");
@@ -74,7 +79,7 @@ export async function createTask(req, res) {
 export async function updateTask(req, res) {
     try {
         const { id } = req.params;
-        const { title, completed, priority, dueDate, projectId, tags, subtasks } = req.body;
+        const { title, completed, priority, dueDate, projectId, tags, subtasks, estimatedPomodoros, pomodorosCompleted } = req.body;
 
         const updateData = {};
         if (title !== undefined) {
@@ -105,6 +110,18 @@ export async function updateTask(req, res) {
                     .filter(s => s.title.length > 0)
                 : [];
         }
+        if (estimatedPomodoros !== undefined) {
+            const num = Number(estimatedPomodoros);
+            if (!isNaN(num)) {
+                updateData.estimatedPomodoros = Math.min(20, Math.max(1, Math.round(num)));
+            }
+        }
+        if (pomodorosCompleted !== undefined) {
+            const num = Number(pomodorosCompleted);
+            if (!isNaN(num)) {
+                updateData.pomodorosCompleted = Math.max(0, Math.round(num));
+            }
+        }
 
         const updatedTask = await Task.findByIdAndUpdate(
             id,
@@ -126,6 +143,33 @@ export async function updateTask(req, res) {
         console.error("Update task error:", error);
         res.status(500).json({
             message: "Failed to update task",
+            error: error.message
+        });
+    }
+}
+
+export async function incrementTaskPomodoro(req, res) {
+    try {
+        const { id } = req.params;
+        const updatedTask = await Task.findByIdAndUpdate(
+            id,
+            { $inc: { pomodorosCompleted: 1 } },
+            {
+                returnDocument: "after",
+                runValidators: true
+            }
+        ).populate("projectId", "name color");
+
+        if (!updatedTask) {
+            return res.status(404).json({
+                message: "Task not found"
+            });
+        }
+        res.json(updatedTask);
+    } catch (error) {
+        console.error("Increment task pomodoro error:", error);
+        res.status(500).json({
+            message: "Failed to increment task pomodoro",
             error: error.message
         });
     }

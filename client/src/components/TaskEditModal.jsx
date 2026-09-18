@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Calendar, Flag, Folder, Tag, ListChecks, Check, Trash2, Plus } from "lucide-react";
+import { X, Calendar, Flag, Folder, Tag, ListChecks, Check, Trash2, Plus, Timer } from "lucide-react";
 
 function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
   const [title, setTitle] = useState("");
@@ -10,6 +10,7 @@ function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
   const [tagInput, setTagInput] = useState("");
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,6 +22,7 @@ function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
       setTagInput("");
       setSubtasks(Array.isArray(task.subtasks) ? [...task.subtasks] : []);
       setNewSubtaskTitle("");
+      setEstimatedPomodoros(task.estimatedPomodoros || 1);
       if (task.dueDate) {
         const d = new Date(task.dueDate);
         const isoStr = !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
@@ -85,7 +87,8 @@ function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
       dueDate: dueDate ? dueDate : null,
       projectId: projectId || null,
       tags,
-      subtasks
+      subtasks,
+      estimatedPomodoros: Number(estimatedPomodoros) || 1
     });
     onClose();
   }
@@ -254,7 +257,7 @@ function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
             </div>
           </div>
 
-          <div className="form-row-2">
+          <div className="form-row-3">
             <div className="form-field">
               <label htmlFor="edit-task-priority">
                 <Flag size={12} strokeWidth={2} /> Priority
@@ -281,6 +284,24 @@ function TaskEditModal({ task, isOpen, onClose, onSave, projects = [] }) {
                 className="form-input"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="edit-task-pomodoros">
+                <Timer size={12} strokeWidth={2} /> Target Pomodoros
+              </label>
+              <input
+                id="edit-task-pomodoros"
+                type="number"
+                min="1"
+                max="20"
+                className="form-input font-tabular"
+                value={estimatedPomodoros}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setEstimatedPomodoros(isNaN(val) ? 1 : Math.max(1, Math.min(20, val)));
+                }}
               />
             </div>
           </div>

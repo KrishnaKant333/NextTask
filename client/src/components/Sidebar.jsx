@@ -1,6 +1,7 @@
 import {
   Inbox,
   Calendar,
+  CalendarDays,
   CheckSquare,
   PanelLeftClose,
   PanelLeftOpen,
@@ -96,6 +97,21 @@ function Sidebar({
             </span>
             {!isCollapsed && taskCounts.today > 0 && (
               <span className="nav-badge highlight">{taskCounts.today}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`nav-item ${selectedView === "upcoming" ? "active" : ""}`}
+            onClick={() => onSelectView("upcoming")}
+            title="Upcoming"
+          >
+            <span className="nav-item-content">
+              <CalendarDays size={15} strokeWidth={2} className="nav-icon" />
+              {!isCollapsed && <span className="nav-label">Upcoming</span>}
+            </span>
+            {!isCollapsed && taskCounts.upcoming > 0 && (
+              <span className="nav-badge">{taskCounts.upcoming}</span>
             )}
           </button>
         </div>
