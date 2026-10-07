@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   Folder,
+  BarChart2,
   LogOut,
   LogIn
 } from "lucide-react";
@@ -118,6 +119,18 @@ function Sidebar({
             {!isCollapsed && taskCounts.upcoming > 0 && (
               <span className="nav-badge">{taskCounts.upcoming}</span>
             )}
+          </button>
+
+          <button
+            type="button"
+            className={`nav-item ${selectedView === "analytics" ? "active" : ""}`}
+            onClick={() => onSelectView("analytics")}
+            title="Analytics & Reporting"
+          >
+            <span className="nav-item-content">
+              <BarChart2 size={15} strokeWidth={2} className="nav-icon" />
+              {!isCollapsed && <span className="nav-label">Analytics</span>}
+            </span>
           </button>
         </div>
 

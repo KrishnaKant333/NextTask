@@ -12,6 +12,7 @@ import TimelineView from "./components/TimelineView";
 import PomodoroTimer from "./components/PomodoroTimer";
 import AuthModal from "./components/AuthModal";
 import ProfileSettingsModal from "./components/ProfileSettingsModal";
+import AnalyticsView from "./components/analytics/AnalyticsView";
 import { useAuth } from "./context/AuthContext";
 import { formatDateISO } from "./utils/dateUtils";
 import {
@@ -198,7 +199,7 @@ function App() {
   function handleSelectView(viewKey) {
     setSelectedView(viewKey);
     setSelectedTaskIds(new Set());
-    if (viewKey !== "inbox" && viewKey !== "today" && viewKey !== "all") {
+    if (viewKey !== "inbox" && viewKey !== "today" && viewKey !== "all" && viewKey !== "upcoming" && viewKey !== "analytics") {
       setNewProjectId(viewKey);
     } else {
       setNewProjectId("");
@@ -613,6 +614,13 @@ function App() {
         color: "#38bdf8"
       };
     }
+    if (selectedView === "analytics") {
+      return {
+        title: "Analytics",
+        subtitle: "Productivity intelligence, trends & consistency",
+        color: "#6366f1"
+      };
+    }
     const proj = projects.find((p) => p._id === selectedView);
     if (proj) {
       return {
@@ -794,29 +802,31 @@ function App() {
                 onRefreshFocusMetrics={handleRefreshFocusMetrics}
               />
 
-              {/* View Mode Switcher (List vs Calendar) */}
-              <div className="view-mode-switcher" role="group" aria-label="View mode">
-                <button
-                  type="button"
-                  className={`view-mode-btn ${activeViewMode === "list" ? "active" : ""}`}
-                  onClick={() => setActiveViewMode("list")}
-                  title="List view"
-                  aria-label="List view"
-                >
-                  <List size={13} strokeWidth={2} />
-                  <span>List</span>
-                </button>
-                <button
-                  type="button"
-                  className={`view-mode-btn ${activeViewMode === "calendar" ? "active" : ""}`}
-                  onClick={() => setActiveViewMode("calendar")}
-                  title="Calendar view"
-                  aria-label="Calendar view"
-                >
-                  <Calendar size={13} strokeWidth={2} />
-                  <span>Calendar</span>
-                </button>
-              </div>
+              {/* View Mode Switcher (List vs Calendar — for task views) */}
+              {selectedView !== "analytics" && (
+                <div className="view-mode-switcher" role="group" aria-label="View mode">
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${activeViewMode === "list" ? "active" : ""}`}
+                    onClick={() => setActiveViewMode("list")}
+                    title="List view"
+                    aria-label="List view"
+                  >
+                    <List size={13} strokeWidth={2} />
+                    <span>List</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`view-mode-btn ${activeViewMode === "calendar" ? "active" : ""}`}
+                    onClick={() => setActiveViewMode("calendar")}
+                    title="Calendar view"
+                    aria-label="Calendar view"
+                  >
+                    <Calendar size={13} strokeWidth={2} />
+                    <span>Calendar</span>
+                  </button>
+                </div>
+              )}
 
               {!isAuthenticated ? (
                 <button
@@ -826,11 +836,11 @@ function App() {
                 >
                   Sign In
                 </button>
-              ) : (
+              ) : selectedView !== "analytics" ? (
                 <span className="status-metric">
                   <strong>{activeCount}</strong> {activeCount === 1 ? "task" : "tasks"} remaining
                 </span>
-              )}
+              ) : null}
             </div>
           </header>
 
@@ -862,6 +872,8 @@ function App() {
                 </div>
               </div>
             </div>
+          ) : selectedView === "analytics" ? (
+            <AnalyticsView onToast={showToast} />
           ) : (
             <>
               {/* Project Overview Card (shown in project view) */}

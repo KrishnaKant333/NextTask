@@ -1,43 +1,31 @@
 # NextTask — AI Agent Handoff (Next Task)
 
 ## 1. Current Development Stage & Status
-- **Stage**: **Stage 7: Productivity Analytics & Reporting (IN PROGRESS)**
+- **Stage**: **Stage 7: Productivity Analytics & Reporting (COMPLETED)**
 - **Completed Milestones**:
   - **Milestone 7.1 — Analytics Data Foundation & Aggregation Engine** (VERIFIED)
-- **Immediate Next Milestone**: **Milestone 7.2 — Completion Velocity & Focus Trends API**
+  - **Milestone 7.2 — Completion Velocity & Focus Trends API** (VERIFIED)
+  - **Milestone 7.3 — Project Time Allocation & Priority Distribution** (VERIFIED)
+  - **Milestone 7.4 — Productivity Consistency Heatmap** (VERIFIED)
+  - **Milestone 7.5 — Dedicated Analytics Dashboard & Reporting UX** (VERIFIED)
+- **Immediate Next Stage**: **Stage 8 — Team Workspaces & Real-Time Collaboration (OR PRODUCT ROADMAP NEXT)**
 
 ---
 
-## 2. Completed in Milestone 7.1 (Analytics Data Foundation & Aggregation Engine)
-- [x] **Productivity Data Audit**:
-  - Analyzed existing `Task`, `FocusSession`, `Project`, and `User` models to identify accurately available data.
-  - Identified critical missing field on `Task`: `completedAt` timestamp (tasks previously only tracked boolean `completed`, preventing accurate historical completion velocity calculations).
-- [x] **Data Model & Lifecycle Enhancements**:
-  - Added `completedAt: { type: Date, default: null }` to [`server/models/Task.js`](file:///d:/KKS/1.%20AProject/NextTask/server/models/Task.js) with indexed query support `{ user: 1, completedAt: -1 }`.
-  - Updated [`server/controllers/taskController.js`](file:///d:/KKS/1.%20AProject/NextTask/server/controllers/taskController.js) lifecycle handlers (`createTask`, `updateTask`, `bulkUpdateTasks`) to set `completedAt` on `completed: true` transitions and reset it to `null` on unchecking.
-- [x] **Timezone Boundary Strategy (ADR-011)**:
-  - Preserved UTC ISO storage in MongoDB while enabling localized day boundaries (`utcStartOfDay`, `utcEndOfDay`) using client `timezoneOffset` in minutes.
-- [x] **Analytics Summary REST Endpoint**:
-  - Implemented `GET /api/analytics/summary` in [`server/controllers/analyticsController.js`](file:///d:/KKS/1.%20AProject/NextTask/server/controllers/analyticsController.js) and [`server/routes/analyticsRoutes.js`](file:///d:/KKS/1.%20AProject/NextTask/server/routes/analyticsRoutes.js).
-  - Scoped strictly to `req.user._id` with JWT authentication (`protect` middleware).
-  - Calculates mathematically rigorous metrics:
-    - Task Metrics: `totalTasks`, `completedTasks`, `activeTasks`, `completionRate`, `overdueTasks`.
-    - Focus Metrics: `totalFocusMinutes`, `totalFocusHours`, `totalFocusSessions`.
-    - Today Stats: `tasksCompletedToday`, `focusMinutesToday`, `focusSessionsToday`, `localDate`.
-    - Streak: Consecutive daily activity streak days.
-- [x] **Frontend Analytics Service**:
-  - Created [`client/src/services/analyticsService.js`](file:///d:/KKS/1.%20AProject/NextTask/client/src/services/analyticsService.js) sending browser `timezoneOffset` automatically.
+## 2. Completed in Milestone 7.5 (Dedicated Analytics Dashboard & Reporting UX)
+- [x] **Analytics Navigation & Workspace View Integration**:
+  - Added "Analytics" navigation item under Focus in [`client/src/components/Sidebar.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/Sidebar.jsx) with `BarChart2` icon.
+  - Integrated `AnalyticsView` conditional rendering in [`client/src/App.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/App.jsx) while seamlessly maintaining task workbench state.
+- [x] **Studio Slate Analytics UX Architecture**:
+  - Root container [`AnalyticsView.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/AnalyticsView.jsx) orchestrating parallel data fetching across all 4 analytics endpoints with local timezone reconciliation.
+  - Header toolbar [`AnalyticsHeader.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/AnalyticsHeader.jsx) with timeframe tabs (`7d`, `30d`, `90d`, `year`) and Refresh action.
+  - 4-metric overview ribbon [`AnalyticsKPIs.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/AnalyticsKPIs.jsx): completed tasks with on-time/overdue breakdown, focus time & sessions, streak and consistency percentage, and today's live output.
+  - Zero-dependency SVG time-series visualizer [`TrendsChart.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/TrendsChart.jsx): dual-axis rendering of daily completions (bars) and focus minutes (area + line) with interactive hover tooltips and daily average chips.
+  - Project and priority breakdown [`ProjectAllocation.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/ProjectAllocation.jsx): proportional horizontal progress tracks for each project + first-class Inbox handling, and comparative priority bands (High, Medium, Low).
+  - Dual-mode consistency visualizer [`ConsistencyHeatmap.jsx`](file:///d:/KKS/1.%20AProject/NextTask/client/src/components/analytics/ConsistencyHeatmap.jsx): toggleable between Continuous Calendar Activity Matrix (GitHub-style tiles) and 7×24 Circadian Hourly Grid with transparent 0..4 intensity legend.
+- [x] **JSON Report Export**:
+  - Implemented 100% native browser JSON report export (`nexttask-analytics-[range]-[date].json`) containing complete metadata, timezone offset, summary metrics, trends, project allocations, and heatmap matrices.
 - [x] **Testing & Verification**:
-  - Created automated test suite `npm run test:analytics` ([`server/test_analytics_foundation.js`](file:///d:/KKS/1.%20AProject/NextTask/server/test_analytics_foundation.js)) verifying unauthenticated rejection, empty state zeroes, lifecycle timestamp tracking, exact math calculations, and multi-tenancy isolation.
-  - All existing test suites (`test:auth`, `test:multi-tenancy`, `test:dev-workspace`, `test:profile`) pass 100%.
-  - Oxlint passes with 0 warnings and 0 errors; client builds cleanly in <3s.
-
----
-
-## 3. Immediate Next Task: Milestone 7.2 (Completion Velocity & Focus Trends API)
-- **Objective**: Provide time-series data for daily and weekly task completions and focus minutes across configurable time windows (e.g. past 7 days, past 30 days) to power visual charts without fabricating historical data.
-- **Key Deliverables**:
-  1. `GET /api/analytics/trends` endpoint accepting `range` (7d, 30d, 90d) and `timezoneOffset`.
-  2. Aggregations using `completedAt` on `Task` and `completedAt` on `FocusSession` grouped by local date.
-  3. Integration tests verifying day-by-day trend buckets.
-
+  - Full server regression test suite passed: `test:auth`, `test:multi-tenancy`, `test:dev-workspace`, `test:profile`, `test:analytics`, `test:trends`, `test:projects-analytics`, `test:heatmap` (100% passed).
+  - Client linter: `npx oxlint src` reported 0 errors, 0 warnings across all 29 files.
+  - Client production build: `npm run build` compiled cleanly in 2.62s.

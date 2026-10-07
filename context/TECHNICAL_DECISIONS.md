@@ -284,4 +284,38 @@ Furthermore, productivity metrics like "tasks completed today" and "focus time t
 - Day-boundary calculations align with the user's local clock without modifying UTC database records.
 - Analytics endpoints require timezoneOffset query parameter for localized accuracy.
 
+---
+
+## ADR-012: Productivity Consistency Heatmap Architecture & Temporal Bucketing
+- **Date**: 2026-10-08 (Milestone 7.4)
+- **Status**: ACCEPTED
+
+### Context
+Users need to observe when they are most active (days of week and times of day) and evaluate their long-term habit consistency. Standard productivity apps often obscure activity behind opaque single scores (e.g. "82/100") or provide misaligned time bucketing that ignores user timezones.
+
+### Decision
+1. **Dual Representation (Hourly Grid & Continuous Daily Matrix)**:
+   - Provide a 7-day-of-week x 24-hour-of-day grid (168 cells) to analyze circadian work patterns.
+   - Provide a continuous daily sequence of calendar days across `30d`, `90d`, or `365d` for habit tracking.
+2. **Transparent, Multi-Signal Metrics**:
+   - Each cell tracks explicit, uncorrupted counts: `completedTasks`, `focusMinutes`, `focusSessions`, and `totalEvents`.
+   - Never synthesize a fake aggregate score.
+3. **Deterministic Daily Intensity Mapping (0..4)**:
+   - Level 0: 0 tasks and 0 focus minutes.
+   - Level 1: 1 task completed OR 1–25 focus minutes.
+   - Level 2: 2–3 tasks completed OR 26–50 focus minutes.
+   - Level 3: 4–5 tasks completed OR 51–100 focus minutes.
+   - Level 4: 6+ tasks completed OR >100 focus minutes.
+4. **Timezone Localization**:
+   - Localize hourly slots using `localMs = timestamp.getTime() - (timezoneOffsetMinutes * 60 * 1000)`.
+   - Ensures an activity at 09:30 local time lands in bucket `09:00`, regardless of server UTC time.
+5. **Semantic Range Boundaries**:
+   - Heatmap supports `30d` (monthly habit check), `90d` (quarterly view), and `365d` (annual matrix).
+   - Rejects `7d` because 7 calendar days contain only a single sample per weekday, rendering recurrence and consistency analysis statistically invalid.
+
+### Consequences
+- Frontend visualizers can render both circadian Day x Hour heatmaps and GitHub-style calendar contribution matrices from a single API call.
+- Data integrity is 100% verifiable against real database entries.
+
+
 

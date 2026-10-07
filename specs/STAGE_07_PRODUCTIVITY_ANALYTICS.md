@@ -2,7 +2,7 @@
 
 - **Feature ID**: `STAGE-07`
 - **Stage**: Stage 7 — Personal Dashboards & Productivity Analytics
-- **Status**: `IN PROGRESS`
+- **Status**: `COMPLETED`
 - **Author**: Lead Software Architect & Senior Full-Stack Engineer
 - **Created Date**: 2026-09-23
 - **Target Completion**: 2026-09-24
@@ -33,10 +33,16 @@ Furthermore, our system audit reveals that the current `Task` model lacks a dedi
 | Milestone | Objective | Scope | Status |
 | :--- | :--- | :--- | :--- |
 | **Milestone 7.1** | Analytics Data Foundation & Summary Metrics | Add `completedAt` to `Task` model; update task completion handlers; implement `GET /api/analytics/summary`; client `analyticsService`; automated tests. | `COMPLETED` |
-| **Milestone 7.2** | Completion Velocity & Focus Trends Engine | Daily time-series aggregation pipeline (`GET /api/analytics/velocity`); zero-dependency SVG velocity bar chart; date range filters (7d, 30d, 90d). | `PLANNED` |
-| **Milestone 7.3** | Project Time Allocation & Priority Distribution | Project breakdown pipeline (`GET /api/analytics/projects`); horizontal proportional distribution meters; priority distribution metrics. | `PLANNED` |
-| **Milestone 7.4** | Productivity Activity Heatmap | Year/quarter activity matrix (`GET /api/analytics/heatmap`); daily intensity calculation combining focus blocks and completed tasks. | `PLANNED` |
-| **Milestone 7.5** | Dedicated Analytics Dashboard & Reporting UX | Full "Analytics" view in Sidebar; Studio Slate KPI summary grid; chart layouts; export data capability (JSON). | `PLANNED` |
+| **Milestone 7.2** | Completion Velocity & Focus Trends Engine | Daily time-series aggregation pipeline (`GET /api/analytics/trends`); continuous date buckets; date range filters (7d, 30d, 90d); summary averages. | `COMPLETED` |
+| **Milestone 7.3** | Project Time Allocation & Priority Distribution | Project breakdown pipeline (`GET /api/analytics/projects`); focus time & task distribution by project & inbox; priority breakdown (high, medium, low); 100% test pass. | `COMPLETED` |
+| **Milestone 7.4** | Productivity Consistency Heatmap | Temporal heatmap pipeline (`GET /api/analytics/heatmap`); 7x24 hourly grid (168 cells) and continuous daily matrix; transparent intensity levels (0..4); 30d/90d/365d ranges; 100% test pass. | `COMPLETED` |
+| **Milestone 7.5** | Dedicated Analytics Dashboard & Reporting UX | Studio Slate dedicated "Analytics" view in Sidebar; KPI summary ribbon; zero-dependency SVG trends chart; project allocation bars; consistency heatmap; JSON report export; 100% test pass. | `COMPLETED` |
+
+> [!NOTE]
+> **Productivity Consistency Heatmap Metric Definition**: The heatmap evaluates real user productivity without arbitrary scoring models. Each cell provides transparent raw metrics (`completedTasks`, `focusMinutes`, `focusSessions`, `totalEvents`). Daily calendar matrices feature a deterministic intensity level `0..4` (0: none, 1: 1 task or 1–25m focus, 2: 2–3 tasks or 26–50m, 3: 4–5 tasks or 51–100m, 4: 6+ tasks or >100m). Temporal patterns are mapped to the user's localized clock using `timezoneOffset`.
+
+> [!NOTE]
+> **Task Completion Event Retention**: `Task.completedAt` represents the latest completion timestamp when a task is checked off, and is reset to `null` if unchecked. This enables accurate determination of completion time, whether it was completed before or after its due date, and whether it was overdue when completed. In a future stage, a dedicated `Task Activity / Completion History` event-sourcing log may be introduced to capture full chronological histories of repeated check/uncheck cycles without altering the current fast indexed `completedAt` schema.
 
 ---
 

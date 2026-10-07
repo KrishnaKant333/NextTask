@@ -83,14 +83,14 @@
 | Milestone 6.3: Frontend Auth UI & Protected Session State | `COMPLETED` | Yes | AuthContext, apiClient Axios interceptors, AuthModal dialog with 1-click dev login, sidebar user profile footer, clean 1.42s build |
 | Milestone 6.4: Multi-Tab Session Synchronization & Profile Customization | `COMPLETED` | Yes | Idempotent seed:dev CLI; ProfileSettingsModal; PUT /profile & PUT /password; avatar palette; Pomodoro preferences; multi-tab storage sync (test_profile.js & test_dev-workspace.js 100% pass) |
 
-### Stage 7: Productivity Analytics & Reporting (IN PROGRESS)
+### Stage 7: Productivity Analytics & Reporting (COMPLETED)
 | Milestone / Item | Status | Verified In Code | Notes |
 | :--- | :--- | :--- | :--- |
 | Milestone 7.1: Analytics Data Foundation & Aggregation Engine | `COMPLETED` | Yes | Added `completedAt` lifecycle in Task model + indexes; timezone-aware day boundary helper; GET `/api/analytics/summary` endpoint; client `analyticsService`; 100% test pass on math, scoping, and lifecycle (`test_analytics_foundation.js`) |
-| Milestone 7.2: Completion Velocity & Focus Trends API | `PLANNED` | No | Daily/weekly rolling velocity and focus time trend aggregations |
-| Milestone 7.3: Project Time & Effort Allocation | `PLANNED` | No | Time distribution across projects and orphan tasks |
-| Milestone 7.4: Productivity Consistency Heatmap | `PLANNED` | No | Year/quarter activity heatmap matrix |
-| Milestone 7.5: Analytics Dashboard & Reporting UX | `PLANNED` | No | Studio Slate dark analytics tab and visualization cards |
+| Milestone 7.2: Completion Velocity & Focus Trends API | `COMPLETED` | Yes | Time-series aggregation endpoint `GET /api/analytics/trends`; continuous zero-filled day buckets across 7d/30d/90d ranges; on-time vs overdue completion classification; client `getAnalyticsTrends`; 100% test pass (`test_analytics_trends.js`) |
+| Milestone 7.3: Project Time & Effort Allocation | `COMPLETED` | Yes | Project breakdown endpoint `GET /api/analytics/projects`; focus minutes, session counts, task completions, and active tasks per project & inbox; priority distribution breakdown; client `getProjectAnalytics`; 100% test pass (`test_analytics_projects.js`) |
+| Milestone 7.4: Productivity Consistency Heatmap | `COMPLETED` | Yes | Consistency heatmap endpoint `GET /api/analytics/heatmap`; 7x24 hourly grid (168 cells) and continuous daily matrix; transparent intensity levels (0..4); 30d/90d/365d ranges; client `getAnalyticsHeatmap`; 100% test pass (`test_analytics_heatmap.js`) |
+| Milestone 7.5: Dedicated Analytics Dashboard & Reporting UX | `COMPLETED` | Yes | Dedicated Analytics view in Sidebar; Studio Slate KPI ribbon; zero-dependency SVG trends chart; project allocation bars; consistency heatmap; JSON report export; 100% test pass; 0 oxlint warnings |
 
 ### Long-Term Milestones
 | Milestone / Item | Status | Verified In Code | Notes |

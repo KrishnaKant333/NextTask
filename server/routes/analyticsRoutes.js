@@ -1,5 +1,10 @@
 import express from "express";
-import { getSummaryMetrics } from "../controllers/analyticsController.js";
+import {
+    getSummaryMetrics,
+    getTrendsMetrics,
+    getProjectAnalytics,
+    getHeatmapAnalytics
+} from "../controllers/analyticsController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -8,5 +13,8 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/summary", getSummaryMetrics);
+router.get("/trends", getTrendsMetrics);
+router.get("/projects", getProjectAnalytics);
+router.get("/heatmap", getHeatmapAnalytics);
 
 export default router;

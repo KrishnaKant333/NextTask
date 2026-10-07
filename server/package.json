@@ -13,6 +13,9 @@
     "test:dev-workspace": "node test_dev_workspace.js",
     "test:profile": "node test_profile.js",
     "test:analytics": "node test_analytics_foundation.js",
+    "test:trends": "node test_analytics_trends.js",
+    "test:projects-analytics": "node test_analytics_projects.js",
+    "test:heatmap": "node test_analytics_heatmap.js",
     "migrate:legacy": "node scripts/migrateLegacyTasksToUser.js",
     "seed:dev": "node scripts/seedDevWorkspace.js"
   },
