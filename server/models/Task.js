@@ -9,6 +9,10 @@ const taskSchema = new mongoose.Schema({
         type:Boolean,
         default: false
     },
+    completedAt: {
+        type: Date,
+        default: null
+    },
     priority: {
         type: String,
         enum: ["low", "medium", "high"],
@@ -48,8 +52,19 @@ const taskSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true
     }
 }, { timestamps: true });
+
+taskSchema.index({ user: 1, createdAt: -1 });
+taskSchema.index({ user: 1, completed: 1 });
+taskSchema.index({ user: 1, completedAt: -1 });
+taskSchema.index({ user: 1, projectId: 1 });
 
 const Task = mongoose.model("Task", taskSchema);
 

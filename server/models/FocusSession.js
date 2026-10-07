@@ -25,13 +25,19 @@ const focusSessionSchema = new mongoose.Schema({
     completedAt: {
         type: Date,
         default: Date.now
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true
     }
 }, { timestamps: true });
 
-// Index for efficient date range querying and aggregations
-focusSessionSchema.index({ completedAt: -1 });
-focusSessionSchema.index({ taskId: 1 });
-focusSessionSchema.index({ projectId: 1 });
+// Indexes for efficient scoped date range querying and aggregations
+focusSessionSchema.index({ user: 1, completedAt: -1 });
+focusSessionSchema.index({ user: 1, taskId: 1 });
+focusSessionSchema.index({ user: 1, projectId: 1 });
 
 const FocusSession = mongoose.model("FocusSession", focusSessionSchema);
 

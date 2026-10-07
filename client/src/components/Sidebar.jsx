@@ -8,8 +8,11 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Folder
+  Folder,
+  LogOut,
+  LogIn
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 function Sidebar({
   projects,
@@ -22,6 +25,8 @@ function Sidebar({
   onEditProject,
   onDeleteProject
 }) {
+  const { user, isAuthenticated, logout, openAuthModal, openProfileModal } = useAuth();
+
   return (
     <aside className={`workspace-sidebar ${isCollapsed ? "collapsed" : ""}`}>
       {/* 1. Sidebar Header */}
@@ -206,6 +211,67 @@ function Sidebar({
           </div>
         </div>
       </nav>
+
+      {/* 4. Sidebar User Profile Footer */}
+      <div className="sidebar-profile-footer">
+        {isAuthenticated && user ? (
+          <div
+            className="sidebar-user-card"
+            onClick={openProfileModal}
+            title={`${user.name} (${user.email}) — Click for Account Settings`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openProfileModal();
+              }
+            }}
+          >
+            <div
+              className="user-avatar-badge"
+              style={{ backgroundColor: user.avatarColor || "#38bdf8" }}
+            >
+              {user.name
+                ? user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)
+                : "U"}
+            </div>
+            {!isCollapsed && (
+              <div className="user-details">
+                <span className="user-display-name">{user.name}</span>
+                <span className="user-display-email">{user.email}</span>
+              </div>
+            )}
+            <button
+              type="button"
+              className="user-logout-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+              }}
+              title="Sign out of workspace"
+              aria-label="Sign out of workspace"
+            >
+              <LogOut size={14} strokeWidth={2} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="sidebar-signin-btn"
+            onClick={() => openAuthModal("login")}
+            title="Sign in"
+          >
+            <LogIn size={15} strokeWidth={2} />
+            {!isCollapsed && <span>Sign In</span>}
+          </button>
+        )}
+      </div>
     </aside>
   );
 }

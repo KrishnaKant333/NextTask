@@ -1,12 +1,8 @@
-import axios from "axios";
-
-const API_BASE = import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL.replace(/\/tasks$/, "/projects")
-  : "http://localhost:5000/api/projects";
+import apiClient from "./apiClient";
 
 export async function getProjects() {
     try {
-        const response = await axios.get(API_BASE);
+        const response = await apiClient.get("/projects");
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to fetch projects";
@@ -16,7 +12,7 @@ export async function getProjects() {
 
 export async function createProject(data) {
     try {
-        const response = await axios.post(API_BASE, data);
+        const response = await apiClient.post("/projects", data);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to create project";
@@ -26,7 +22,7 @@ export async function createProject(data) {
 
 export async function updateProject(id, updates) {
     try {
-        const response = await axios.put(`${API_BASE}/${id}`, updates);
+        const response = await apiClient.put(`/projects/${id}`, updates);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to update project";
@@ -36,7 +32,7 @@ export async function updateProject(id, updates) {
 
 export async function deleteProject(id) {
     try {
-        const response = await axios.delete(`${API_BASE}/${id}`);
+        const response = await apiClient.delete(`/projects/${id}`);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to delete project";

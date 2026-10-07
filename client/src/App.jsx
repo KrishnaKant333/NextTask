@@ -10,6 +10,9 @@ import CalendarView from "./components/CalendarView";
 import CalendarDayModal from "./components/CalendarDayModal";
 import TimelineView from "./components/TimelineView";
 import PomodoroTimer from "./components/PomodoroTimer";
+import AuthModal from "./components/AuthModal";
+import ProfileSettingsModal from "./components/ProfileSettingsModal";
+import { useAuth } from "./context/AuthContext";
 import { formatDateISO } from "./utils/dateUtils";
 import {
   getTasks,
@@ -50,6 +53,7 @@ import {
 const PRIORITY_WEIGHTS = { high: 3, medium: 2, low: 1 };
 
 function App() {
+  const { user, isAuthenticated, loading: authLoading, openAuthModal } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -161,9 +165,16 @@ function App() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Initial fetch: tasks and projects in parallel
+  // Initial fetch: tasks and projects in parallel (scoped to authenticated user)
   useEffect(() => {
     async function load() {
+      if (!isAuthenticated) {
+        setTasks([]);
+        setProjects([]);
+        setFocusMetrics(null);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const [tasksData, projectsData, metricsData] = await Promise.all([
@@ -181,7 +192,7 @@ function App() {
       }
     }
     load();
-  }, []);
+  }, [isAuthenticated, user?._id]);
 
   // Update newProjectId and reset selection when switching views
   function handleSelectView(viewKey) {
@@ -807,13 +818,53 @@ function App() {
                 </button>
               </div>
 
-              <span className="status-metric">
-                <strong>{activeCount}</strong> {activeCount === 1 ? "task" : "tasks"} remaining
-              </span>
+              {!isAuthenticated ? (
+                <button
+                  type="button"
+                  className="header-signin-pill"
+                  onClick={() => openAuthModal("login")}
+                >
+                  Sign In
+                </button>
+              ) : (
+                <span className="status-metric">
+                  <strong>{activeCount}</strong> {activeCount === 1 ? "task" : "tasks"} remaining
+                </span>
+              )}
             </div>
           </header>
 
-          {/* Project Overview Card (shown in project view) */}
+          {!isAuthenticated && !authLoading ? (
+            <div className="unauth-workspace-banner">
+              <div className="unauth-banner-card">
+                <div className="unauth-brand-badge">
+                  <CheckSquare size={32} strokeWidth={2.2} />
+                </div>
+                <h2 className="unauth-banner-title">Welcome to NextTask Workspace</h2>
+                <p className="unauth-banner-desc">
+                  Sign in to view, create, and organize your tasks, projects, and focus sessions with full account privacy.
+                </p>
+                <div className="unauth-banner-actions">
+                  <button
+                    type="button"
+                    className="unauth-primary-btn"
+                    onClick={() => openAuthModal("login")}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    className="unauth-secondary-btn"
+                    onClick={() => openAuthModal("register")}
+                  >
+                    Create Free Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Project Overview Card (shown in project view) */}
           {activeProject && (
             <div className="project-overview-card">
               <div className="project-overview-top">
@@ -1129,6 +1180,8 @@ function App() {
               )}
             </div>
           </footer>
+            </>
+          )}
         </div>
       </div>
 
@@ -1193,6 +1246,10 @@ function App() {
           <span>{toast.message}</span>
         </div>
       )}
+
+      {/* 10. Authentication & Profile Dialogs */}
+      <AuthModal />
+      <ProfileSettingsModal />
     </div>
   );
 }

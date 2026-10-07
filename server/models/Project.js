@@ -21,8 +21,17 @@ const projectSchema = new mongoose.Schema({
     isArchived: {
         type: Boolean,
         default: false
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true
     }
 }, { timestamps: true });
+
+projectSchema.index({ user: 1, name: 1 });
+projectSchema.index({ user: 1, createdAt: -1 });
 
 const Project = mongoose.model("Project", projectSchema);
 

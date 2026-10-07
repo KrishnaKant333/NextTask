@@ -185,10 +185,10 @@ async function runTests() {
     // Test 12: Protected endpoint with expired token
     // -------------------------------------------------------------
     console.log("\n[Test 12] Protected /api/auth/me with expired token");
-    const expiredToken = jwt.sign({ id: createdUserId }, process.env.JWT_SECRET, {
-      expiresIn: "1ms",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    const expiredToken = jwt.sign(
+      { id: createdUserId, exp: Math.floor(Date.now() / 1000) - 30 },
+      process.env.JWT_SECRET
+    );
     const resExpired = await fetch(`${BASE_URL}/me`, {
       headers: { Authorization: `Bearer ${expiredToken}` },
     });

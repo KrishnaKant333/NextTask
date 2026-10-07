@@ -28,8 +28,60 @@ To scale NextTask into a secure, multi-tenant productivity platform, users must 
 | Milestone | Objective | Scope | Status |
 | :--- | :--- | :--- | :--- |
 | **Milestone 6.1** | User Model, Password Security & JWT Auth API | `User` Mongoose model, `bcryptjs` password hashing, `jsonwebtoken` issuance, auth middleware (`protect`), `/api/auth/register`, `/api/auth/login`, `/api/auth/me`. | **COMPLETED** |
-| **Milestone 6.2** | Multi-Tenant Scoping & Database Isolation | Add `userId` to `Task`, `Project`, and `FocusSession` models; scope all CRUD and aggregations to `req.user._id`; legacy data migration script; multi-tenant security verification tests. | **NEXT MILESTONE** |
-| **Milestone 6.3** | Client Auth Context & Studio Slate Auth Modal | React AuthContext, Axios auth interceptors, Sign In / Sign Up modal, user profile dropdown, secure session logout, guest mode migration. | PLANNED |
+| **Milestone 6.2** | Multi-Tenant Scoping & Database Isolation | Add `user` ObjectId ref to `Task`, `Project`, and `FocusSession` models; scope all CRUD and aggregations to `req.user._id`; legacy data migration script (`migrateLegacyTasksToUser.js`); multi-tenant security verification tests. | **COMPLETED** |
+| **Milestone 6.3** | Client Auth Context & Studio Slate Auth Modal | React AuthContext, Axios auth interceptors, Sign In / Sign Up modal, user profile dropdown, secure session logout, guest mode migration. | **COMPLETED** |
+| **Milestone 6.4** | Multi-Tab Session Synchronization & Profile Customization | Profile editing, avatar color, pomodoro preferences (work/break/sound), password change, multi-tab storage sync, profile settings modal. | **ACTIVE** |
+
+---
+
+## 7. Functional & Architectural Requirements (Milestone 6.4 Focused)
+
+### 7.1 Scope Separation: Implement Now vs. Deferred
+
+#### IMPLEMENT NOW:
+1. **User Profile Customization**:
+   - Update display name (`name`: 2–60 characters).
+   - Avatar color customization (`avatarColor`: hex code matching Studio Slate palette).
+   - Pomodoro timer preferences:
+     - `pomodoroMinutes`: Focus interval duration (15–60 min).
+     - `shortBreakMinutes`: Short break duration (3–30 min).
+     - `longBreakMinutes`: Long break duration (10–45 min).
+     - `soundEnabled`: Web Audio chime toggle.
+   - Synchronized between backend user profile and client `PomodoroTimer` state.
+2. **Password Change & Re-Authentication**:
+   - `PUT /api/auth/password` endpoint requiring verification of `currentPassword` before accepting `newPassword`.
+   - Length validation (min 6 characters) and prevention of password reuse.
+   - Issues fresh signed JWT token for the active session.
+3. **Multi-Tab Session Synchronization**:
+   - Uses `window.addEventListener("storage", ...)` on the client.
+   - Synchronizes login, logout, and token changes across all tabs of the **current browser/origin**.
+   - Immediate logout broadcast: logging out in Tab A broadcasts to Tab B and Tab C, instantly transitioning all tabs back to the sign-in modal.
+
+#### DEFERRED (Documented Reasons):
+1. **True Cross-Device Session Synchronization**:
+   - *Reason*: Stateless JWT tokens cannot push updates or synchronize state across physical devices without a real-time transport (e.g. WebSockets / Server-Sent Events) and a server-side session registry. Deferred to Stage 8 (Collaboration & Real-Time Sync).
+2. **Sign Out of All Authenticated Devices**:
+   - *Reason*: The current stateless JWT architecture verifies signatures locally without a database query per request to check token revocation. Reliably terminating sessions on all devices requires either a `tokenVersion` counter on the User model or a Redis/MongoDB active session store. Deferred to Stage 7 / security hardening.
+3. **Email Verification**:
+   - *Reason*: No transactional email transport service (SendGrid, Postmark, AWS SES) is configured in this local-first architecture. The UI displays the user's registered account email with an accurate "Primary Email" label rather than an unverified "Verified Account" badge.
+
+### 7.2 Stateless JWT Password Change Behavior
+- When a user changes their password on Device A, Device A receives a fresh JWT and updates its local credentials.
+- In a purely stateless JWT architecture without server-side token revocation or token version checks, existing valid tokens previously issued to Device B remain cryptographically valid until their expiration window (`7d`).
+- No claims of "remote device session invalidation" are made in the product UI.
+
+---
+
+## 8. Definition of Done for Milestone 6.4
+- [ ] Development workspace login verified and backed by idempotent `npm run seed:dev` script.
+- [ ] User schema updated with `avatarColor` and `preferences` (`pomodoroMinutes`, `shortBreakMinutes`, `longBreakMinutes`, `soundEnabled`).
+- [ ] `PUT /api/auth/profile` endpoint implemented with validation and protected by `protect`.
+- [ ] `PUT /api/auth/password` endpoint implemented requiring current password verification before hashing new password.
+- [ ] `ProfileSettingsModal.jsx` implemented in Studio Slate aesthetic with Account, Preferences, and Security tabs.
+- [ ] Multi-tab synchronization verified via storage events (login, logout, session clearance).
+- [ ] Pomodoro timer respects custom preferences from user profile.
+- [ ] Automated test suite covering profile updates, password change, current password failure, and token rotation.
+
 
 ---
 

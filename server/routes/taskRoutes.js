@@ -10,8 +10,12 @@ import {
     bulkDeleteTasks,
     incrementTaskPomodoro
 } from "../controllers/taskController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Guard all task endpoints with JWT authentication
+router.use(protect);
 
 router.get("/", getTasks);
 router.post("/", createTask);

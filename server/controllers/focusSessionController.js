@@ -9,13 +9,26 @@ export async function logFocusSession(req, res) {
     try {
         const { taskId, projectId, durationMinutes, mode, completedAt } = req.body;
 
-        let resolvedProjectId = projectId || null;
+        let resolvedTaskId = null;
+        let resolvedProjectId = null;
 
-        // If taskId is provided but projectId is not, inherit projectId from the task
-        if (taskId && !resolvedProjectId) {
-            const task = await Task.findById(taskId);
-            if (task && task.projectId) {
-                resolvedProjectId = task.projectId;
+        // If taskId is provided, verify it belongs to this user
+        if (taskId) {
+            const task = await Task.findOne({ _id: taskId, user: req.user._id });
+            if (task) {
+                resolvedTaskId = task._id;
+                // If projectId is not explicitly given, inherit from the task
+                if (!projectId && task.projectId) {
+                    resolvedProjectId = task.projectId;
+                }
+            }
+        }
+
+        // If projectId is explicitly provided, verify it belongs to this user
+        if (projectId) {
+            const project = await Project.findOne({ _id: projectId, user: req.user._id });
+            if (project) {
+                resolvedProjectId = project._id;
             }
         }
 
@@ -24,11 +37,12 @@ export async function logFocusSession(req, res) {
             : 25;
 
         const session = await FocusSession.create({
-            taskId: taskId || null,
+            taskId: resolvedTaskId,
             projectId: resolvedProjectId,
             durationMinutes: validDuration,
             mode: mode || "work",
-            completedAt: completedAt ? new Date(completedAt) : new Date()
+            completedAt: completedAt ? new Date(completedAt) : new Date(),
+            user: req.user._id
         });
 
         const populated = await FocusSession.findById(session._id)
@@ -62,8 +76,9 @@ export async function getTodayFocusMetrics(req, res) {
         const endOfDay = new Date(targetDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Fetch today's work sessions
+        // Fetch today's work sessions scoped strictly to the authenticated user
         const todaySessions = await FocusSession.find({
+            user: req.user._id,
             completedAt: { $gte: startOfDay, $lte: endOfDay },
             mode: "work"
         })
@@ -98,13 +113,13 @@ export async function getTodayFocusMetrics(req, res) {
 
         const projectDistribution = Array.from(projectMap.values()).sort((a, b) => b.minutes - a.minutes);
 
-        // Compute Daily Streak (consecutive days with at least 1 completed work session)
-        // Fetch sessions over the last 90 days
+        // Compute Daily Streak scoped strictly to the authenticated user
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
         ninetyDaysAgo.setHours(0, 0, 0, 0);
 
         const pastSessions = await FocusSession.find({
+            user: req.user._id,
             completedAt: { $gte: ninetyDaysAgo },
             mode: "work"
         }).select("completedAt");
@@ -128,7 +143,6 @@ export async function getTodayFocusMetrics(req, res) {
             dailyStreak = 1;
             checkDate.setDate(checkDate.getDate() - 1);
         } else {
-            // Check yesterday
             checkDate.setDate(checkDate.getDate() - 1);
         }
 
@@ -162,7 +176,7 @@ export async function getTodayFocusMetrics(req, res) {
 export async function getFocusHistory(req, res) {
     try {
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-        const history = await FocusSession.find({ mode: "work" })
+        const history = await FocusSession.find({ user: req.user._id, mode: "work" })
             .populate("taskId", "title completed priority")
             .populate("projectId", "name color")
             .sort({ completedAt: -1 })

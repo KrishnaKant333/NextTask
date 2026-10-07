@@ -224,3 +224,64 @@ Stage 6 introduces multi-tenancy and user authentication. Securing user accounts
 - All subsequent protected routes must extract `req.headers.authorization` Bearer tokens.
 - Tasks, Projects, and FocusSessions must be scoped to `req.user._id` in Milestone 6.2.
 
+---
+
+## ADR-010: Multi-Tab Storage Synchronization & Stateless JWT Lifecycle Boundaries
+- **Date**: 2026-09-23 (Milestone 6.4)
+- **Status**: ACCEPTED
+
+### Context
+Users open multiple browser tabs of NextTask simultaneously. When a user logs in, updates their profile (display name, avatar color, pomodoro durations), or logs out in one tab, other open tabs risk becoming out of sync or displaying stale state. Furthermore, we must establish clear architectural boundaries between multi-tab synchronization and true cross-device synchronization, as well as stateless JWT behavior during password rotation.
+
+### Decision
+1. **Multi-Tab Session Synchronization**:
+   - Utilize native browser `window.addEventListener("storage", ...)` listening for mutations to `nexttask_token` and `nexttask_user`.
+   - When a token is removed in Tab A (logout), Tab B and Tab C immediately clear local session state and present the authentication modal.
+   - When a user profile is updated in Tab A, other tabs immediately rehydrate their user context without requiring a page refresh.
+   - *Clear Architectural Boundary*: This mechanism operates exclusively across tabs sharing the same browser origin. It does **not** provide cross-device session synchronization. Cross-device state push requires a server-side real-time transport (WebSockets / SSE) and session registry, deferred to Stage 8.
+2. **Stateless JWT Password Rotation & Token Lifecycle**:
+   - When changing passwords via `PUT /api/auth/password`, verify `currentPassword` against bcrypt hash before accepting `newPassword`.
+   - Issue a fresh signed JWT to the active requesting device so its workflow is uninterrupted.
+   - *Security Guarantee Boundary*: Because JWTs are stateless and signature-verified locally without per-request database lookups, tokens previously issued on other devices remain cryptographically valid until their expiration (`7d`). Simultaneous global revocation across all devices requires server-side token versioning (`tokenVersion` on User document) or a distributed Redis/MongoDB token denylist, deferred to Stage 7.
+3. **Idempotent Development Seeding**:
+   - Provide `npm run seed:dev` (`server/scripts/seedDevWorkspace.js`) to idempotently ensure the development user (`dev@nexttask.local` / `DevPassword#2026`) and development projects/tasks/sessions exist on any local developer instance.
+   - Decouple development seed infrastructure from server boot (`server.js`), preventing silent user generation during production startup.
+4. **Email Verification Boundary**:
+   - Without an integrated transactional email transport (SendGrid, Postmark), do not display deceptive "Verified Account" badges. The user's account email is explicitly labeled as "Account Email".
+
+### Consequences
+- Multi-tab synchronization is zero-dependency and instantaneous within the browser.
+- No false security claims are made regarding remote device session termination.
+- Development workspace is fully reliable and testable across clean databases.
+
+---
+
+## ADR-011: Timezone-Aware Analytics Aggregation Strategy & Explicit Task Completion Timestamps
+- **Date**: 2026-09-23 (Milestone 7.1)
+- **Status**: ACCEPTED
+
+### Context
+Stage 7 introduces productivity analytics and reporting. Prior to Stage 7, the `Task` model only stored a boolean `completed` flag, relying on Mongoose `{ timestamps: true }` (`createdAt`, `updatedAt`). However, `updatedAt` is updated on any field modification (renaming, changing priority, rescheduling, subtask checking), meaning it cannot represent the point in time when a task was completed.
+Furthermore, productivity metrics like "tasks completed today" and "focus time today" require clear day-boundary definitions that respect the user's local timezone without corrupting UTC database consistency.
+
+### Decision
+1. **Explicit Completion Timestamp (`completedAt`)**:
+   - Add `completedAt: { type: Date, default: null }` and compound index `{ user: 1, completedAt: -1 }` to the `Task` schema.
+   - When a task transitions to `completed: true`, set `completedAt = new Date()`.
+   - When un-completed (`completed: false`), set `completedAt = null`.
+   - Preserves existing `updatedAt` for record modification auditability while providing a permanent, truthful completion timeline.
+2. **Timezone-Aware Day Boundary Aggregation**:
+   - Store all database timestamps strictly in standard UTC ISO format.
+   - For day-level analytics (today's stats, daily streak, day boundaries), accept an optional client `timezoneOffset` parameter (in minutes, via `new Date().getTimezoneOffset()`).
+   - Use the offset to calculate the user's localized start-of-day (`00:00:00.000`) and end-of-day (`23:59:59.999`) in UTC, preventing timezone drift or cross-midnight reporting anomalies.
+3. **No Arbitrary Productivity Scores**:
+   - Forbid arbitrary, synthetic "productivity scores" (e.g. "Score: 84/100"). Every metric exposed must have an unambiguous real-world definition, known underlying source collection, and verified aggregation method.
+4. **Zero Third-Party Chart Bloat**:
+   - Implement data visualizations using native SVG and vanilla CSS components. Avoid heavyweight charting libraries (Chart.js, Recharts) to preserve sub-second render performance and zero bundle-size bloat.
+
+### Consequences
+- Historical completion velocity can now be accurately queried.
+- Day-boundary calculations align with the user's local clock without modifying UTC database records.
+- Analytics endpoints require timezoneOffset query parameter for localized accuracy.
+
+

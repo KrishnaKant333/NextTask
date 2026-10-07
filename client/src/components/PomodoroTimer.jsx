@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Play,
   Pause,
@@ -24,6 +24,7 @@ import {
   loadPomodoroState,
   savePomodoroState
 } from "../utils/pomodoroUtils";
+import { useAuth } from "../context/AuthContext";
 
 function PomodoroTimer({
   onToast,
@@ -35,6 +36,25 @@ function PomodoroTimer({
   onLogFocusSession = null,
   onRefreshFocusMetrics = null
 }) {
+  const { user } = useAuth();
+
+  const getModeDuration = useCallback(
+    (targetMode) => {
+      if (!user?.preferences) return DEFAULT_DURATIONS[targetMode];
+      if (targetMode === POMODORO_MODES.WORK) {
+        return (user.preferences.pomodoroMinutes || 25) * 60;
+      }
+      if (targetMode === POMODORO_MODES.SHORT_BREAK) {
+        return (user.preferences.shortBreakMinutes || 5) * 60;
+      }
+      if (targetMode === POMODORO_MODES.LONG_BREAK) {
+        return (user.preferences.longBreakMinutes || 15) * 60;
+      }
+      return DEFAULT_DURATIONS[targetMode];
+    },
+    [user?.preferences]
+  );
+
   // Load persisted initial state or initialize defaults
   const [timerState, setTimerState] = useState(() => {
     const saved = loadPomodoroState();
@@ -178,7 +198,7 @@ function PomodoroTimer({
         if (mode === POMODORO_MODES.WORK) {
           const nextSessions = sessionsCompleted + 1;
           const nextMode = getNextMode(mode, sessionsCompleted);
-          const nextDuration = DEFAULT_DURATIONS[nextMode];
+          const nextDuration = getModeDuration(nextMode);
 
           if (activeTaskRef.current) {
             onCompletePomodoroForTaskRef.current?.(activeTaskRef.current._id);
@@ -187,7 +207,7 @@ function PomodoroTimer({
           onLogFocusSessionRef.current?.({
             taskId: activeTaskRef.current?._id || null,
             projectId: activeTaskRef.current?.projectId?._id || activeTaskRef.current?.projectId || null,
-            durationMinutes: 25,
+            durationMinutes: user?.preferences?.pomodoroMinutes || 25,
             mode: "work"
           });
 
@@ -202,13 +222,13 @@ function PomodoroTimer({
 
           onToast?.(
             nextMode === POMODORO_MODES.LONG_BREAK
-              ? "4 focus sessions complete! Take a relaxing 15m Long Break."
-              : "Focus session complete! Time for a 5m Short Break.",
+              ? "4 focus sessions complete! Take a relaxing Long Break."
+              : "Focus session complete! Time for a Short Break.",
             "success"
           );
         } else {
           // Break finished -> Transition to Work
-          const nextDuration = DEFAULT_DURATIONS[POMODORO_MODES.WORK];
+          const nextDuration = getModeDuration(POMODORO_MODES.WORK);
           setTimerState((prev) => ({
             ...prev,
             isRunning: false,
@@ -246,7 +266,16 @@ function PomodoroTimer({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleVisibilityChange);
     };
-  }, [isRunning, targetEndTime, mode, sessionsCompleted, soundEnabled, onToast]);
+  }, [
+    isRunning,
+    targetEndTime,
+    mode,
+    sessionsCompleted,
+    soundEnabled,
+    onToast,
+    getModeDuration,
+    user?.preferences?.pomodoroMinutes,
+  ]);
 
   // Controls: Play / Pause
   function togglePlayPause() {
@@ -263,7 +292,7 @@ function PomodoroTimer({
       }));
     } else {
       // Start / Resume
-      const secs = remainingSeconds > 0 ? remainingSeconds : DEFAULT_DURATIONS[mode];
+      const secs = remainingSeconds > 0 ? remainingSeconds : getModeDuration(mode);
       const targetEnd = Date.now() + secs * 1000;
       setTimerState((prev) => ({
         ...prev,
@@ -280,7 +309,7 @@ function PomodoroTimer({
       ...prev,
       isRunning: false,
       targetEndTime: null,
-      remainingSeconds: DEFAULT_DURATIONS[prev.mode]
+      remainingSeconds: getModeDuration(prev.mode)
     }));
   }
 
@@ -292,7 +321,7 @@ function PomodoroTimer({
       isRunning: false,
       targetEndTime: null,
       mode: nextMode,
-      remainingSeconds: DEFAULT_DURATIONS[nextMode]
+      remainingSeconds: getModeDuration(nextMode)
     }));
   }
 
@@ -304,7 +333,7 @@ function PomodoroTimer({
       isRunning: false,
       targetEndTime: null,
       mode: targetMode,
-      remainingSeconds: DEFAULT_DURATIONS[targetMode]
+      remainingSeconds: getModeDuration(targetMode)
     }));
   }
 
@@ -317,7 +346,7 @@ function PomodoroTimer({
   }
 
   const currentMeta = MODE_META[mode] || MODE_META[POMODORO_MODES.WORK];
-  const totalModeDuration = DEFAULT_DURATIONS[mode];
+  const totalModeDuration = getModeDuration(mode);
   const progressPercent = Math.min(
     100,
     Math.max(

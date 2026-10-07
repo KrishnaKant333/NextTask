@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/tasks";
+import apiClient from "./apiClient";
 
 export async function getTasks(filter = null) {
     try {
@@ -10,7 +8,7 @@ export async function getTasks(filter = null) {
         } else if (filter && typeof filter === "object") {
             config.params = filter;
         }
-        const response = await axios.get(API_URL, config);
+        const response = await apiClient.get("/tasks", config);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to fetch tasks";
@@ -24,7 +22,7 @@ export async function createTask(title, priority = "medium", dueDate = null, pro
         if (projectId) payload.projectId = projectId;
         if (Array.isArray(tags) && tags.length > 0) payload.tags = tags;
         if (Array.isArray(subtasks) && subtasks.length > 0) payload.subtasks = subtasks;
-        const response = await axios.post(API_URL, payload);
+        const response = await apiClient.post("/tasks", payload);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to create task";
@@ -34,7 +32,7 @@ export async function createTask(title, priority = "medium", dueDate = null, pro
 
 export async function deleteTask(id) {
     try {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await apiClient.delete(`/tasks/${id}`);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to delete task";
@@ -44,7 +42,7 @@ export async function deleteTask(id) {
 
 export async function updateTask(id, updates) {
     try {
-        const response = await axios.put(`${API_URL}/${id}`, updates);
+        const response = await apiClient.put(`/tasks/${id}`, updates);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to update task";
@@ -54,7 +52,7 @@ export async function updateTask(id, updates) {
 
 export async function toggleSubtask(id, subtaskId) {
     try {
-        const response = await axios.patch(`${API_URL}/${id}/subtasks/${subtaskId}/toggle`);
+        const response = await apiClient.patch(`/tasks/${id}/subtasks/${subtaskId}/toggle`);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to toggle subtask";
@@ -64,7 +62,7 @@ export async function toggleSubtask(id, subtaskId) {
 
 export async function bulkUpdateTasks(ids, updates) {
     try {
-        const response = await axios.post(`${API_URL}/bulk-update`, { ids, updates });
+        const response = await apiClient.post("/tasks/bulk-update", { ids, updates });
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to bulk update tasks";
@@ -74,7 +72,7 @@ export async function bulkUpdateTasks(ids, updates) {
 
 export async function bulkDeleteTasks(ids) {
     try {
-        const response = await axios.post(`${API_URL}/bulk-delete`, { ids });
+        const response = await apiClient.post("/tasks/bulk-delete", { ids });
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to bulk delete tasks";
@@ -84,7 +82,7 @@ export async function bulkDeleteTasks(ids) {
 
 export async function incrementTaskPomodoro(id) {
     try {
-        const response = await axios.patch(`${API_URL}/${id}/pomodoro`);
+        const response = await apiClient.patch(`/tasks/${id}/pomodoro`);
         return response.data;
     } catch (error) {
         const message = error.response?.data?.message || "Failed to increment pomodoro";

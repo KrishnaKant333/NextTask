@@ -1,42 +1,43 @@
 # NextTask — AI Agent Handoff (Next Task)
 
 ## 1. Current Development Stage & Status
-- **Stage**: **Stage 6: User Authentication & Multi-Tenancy (ACTIVE)**
+- **Stage**: **Stage 7: Productivity Analytics & Reporting (IN PROGRESS)**
 - **Completed Milestones**:
-  - **Milestone 6.1 — User Model, Password Security & JWT Authentication API** (VERIFIED)
-- **Immediate Next Milestone**: **Milestone 6.2 — Multi-Tenant Scoping & Task Ownership Migration**
+  - **Milestone 7.1 — Analytics Data Foundation & Aggregation Engine** (VERIFIED)
+- **Immediate Next Milestone**: **Milestone 7.2 — Completion Velocity & Focus Trends API**
 
 ---
 
-## 2. Completed in Milestone 6.1 (User Model, Password Security & JWT Authentication API)
-- [x] Installed `bcryptjs` and `jsonwebtoken` in backend.
-- [x] Configured environment variables in `server/.env` and `server/.env.example` (`JWT_SECRET`, `JWT_EXPIRES_IN=7d`).
-- [x] Enforced fail-fast startup check in `server/server.js` and `server/middleware/authMiddleware.js` ensuring the server refuses to run with missing or empty `JWT_SECRET`.
-- [x] Created `server/models/User.js`:
-  - Normalized lowercase/trimmed email with regex format validation and unique database index.
-  - Salted password hashing via `bcryptjs` work factor 10 in Mongoose `pre("save")` hook.
-  - Instance method `matchPassword` for secure comparison.
-  - Security hardening: Stripped `password` from all JSON serialization outputs (`toJSON` transform).
-- [x] Created `server/middleware/authMiddleware.js`:
-  - `generateToken(id)` with explicit expiration (default: `7d`).
-  - `protect` middleware verifying Bearer tokens, rejecting expired (`TOKEN_EXPIRED`) and malformed tokens, and populating `req.user`.
-- [x] Created `server/controllers/authController.js` & `server/routes/authRoutes.js`:
-  - `POST /api/auth/register`: Input validation (name >= 2, valid email format, password >= 6), duplicate prevention, returns user details + JWT.
-  - `POST /api/auth/login`: Unified generic error responses preventing email enumeration, returns user details + JWT.
-  - `GET /api/auth/me`: Protected identity endpoint returning authenticated user profile without sensitive fields.
-- [x] Created test suite (`server/test_auth.js`) covering 13 test scenarios (37 assertions) with isolated test data and clean database teardown.
-- [x] Verified non-regression on existing tasks, projects, and focus sessions (`scratch/test_milestone_5_3.js`).
-- [x] Verified client production build passes cleanly in 1.15s.
+## 2. Completed in Milestone 7.1 (Analytics Data Foundation & Aggregation Engine)
+- [x] **Productivity Data Audit**:
+  - Analyzed existing `Task`, `FocusSession`, `Project`, and `User` models to identify accurately available data.
+  - Identified critical missing field on `Task`: `completedAt` timestamp (tasks previously only tracked boolean `completed`, preventing accurate historical completion velocity calculations).
+- [x] **Data Model & Lifecycle Enhancements**:
+  - Added `completedAt: { type: Date, default: null }` to [`server/models/Task.js`](file:///d:/KKS/1.%20AProject/NextTask/server/models/Task.js) with indexed query support `{ user: 1, completedAt: -1 }`.
+  - Updated [`server/controllers/taskController.js`](file:///d:/KKS/1.%20AProject/NextTask/server/controllers/taskController.js) lifecycle handlers (`createTask`, `updateTask`, `bulkUpdateTasks`) to set `completedAt` on `completed: true` transitions and reset it to `null` on unchecking.
+- [x] **Timezone Boundary Strategy (ADR-011)**:
+  - Preserved UTC ISO storage in MongoDB while enabling localized day boundaries (`utcStartOfDay`, `utcEndOfDay`) using client `timezoneOffset` in minutes.
+- [x] **Analytics Summary REST Endpoint**:
+  - Implemented `GET /api/analytics/summary` in [`server/controllers/analyticsController.js`](file:///d:/KKS/1.%20AProject/NextTask/server/controllers/analyticsController.js) and [`server/routes/analyticsRoutes.js`](file:///d:/KKS/1.%20AProject/NextTask/server/routes/analyticsRoutes.js).
+  - Scoped strictly to `req.user._id` with JWT authentication (`protect` middleware).
+  - Calculates mathematically rigorous metrics:
+    - Task Metrics: `totalTasks`, `completedTasks`, `activeTasks`, `completionRate`, `overdueTasks`.
+    - Focus Metrics: `totalFocusMinutes`, `totalFocusHours`, `totalFocusSessions`.
+    - Today Stats: `tasksCompletedToday`, `focusMinutesToday`, `focusSessionsToday`, `localDate`.
+    - Streak: Consecutive daily activity streak days.
+- [x] **Frontend Analytics Service**:
+  - Created [`client/src/services/analyticsService.js`](file:///d:/KKS/1.%20AProject/NextTask/client/src/services/analyticsService.js) sending browser `timezoneOffset` automatically.
+- [x] **Testing & Verification**:
+  - Created automated test suite `npm run test:analytics` ([`server/test_analytics_foundation.js`](file:///d:/KKS/1.%20AProject/NextTask/server/test_analytics_foundation.js)) verifying unauthenticated rejection, empty state zeroes, lifecycle timestamp tracking, exact math calculations, and multi-tenancy isolation.
+  - All existing test suites (`test:auth`, `test:multi-tenancy`, `test:dev-workspace`, `test:profile`) pass 100%.
+  - Oxlint passes with 0 warnings and 0 errors; client builds cleanly in <3s.
 
 ---
 
-## 3. Immediate Next Task: Milestone 6.2 (Multi-Tenant Scoping & Task Ownership Migration)
-- **Objective**: Scope Tasks, Projects, and FocusSessions to authenticated users and safely migrate legacy development records.
+## 3. Immediate Next Task: Milestone 7.2 (Completion Velocity & Focus Trends API)
+- **Objective**: Provide time-series data for daily and weekly task completions and focus minutes across configurable time windows (e.g. past 7 days, past 30 days) to power visual charts without fabricating historical data.
 - **Key Deliverables**:
-  1. Add `user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true }` to `Task`, `Project`, and `FocusSession` schemas.
-  2. Implement safe migration strategy script (`server/scripts/migrateLegacyTasksToUser.js`):
-     - Check for unowned documents (`{ user: { $exists: false } }` or `{ user: null }`).
-     - Allow assigning them to a specified user or designated development admin user without silent deletion.
-  3. Apply `protect` middleware to `/api/tasks`, `/api/projects`, and `/api/focus-sessions`.
-  4. Scope all controller queries and mutations to `{ user: req.user._id }`.
-  5. Add authorization verification tests ensuring User A cannot read, update, or delete User B's tasks or projects.
+  1. `GET /api/analytics/trends` endpoint accepting `range` (7d, 30d, 90d) and `timezoneOffset`.
+  2. Aggregations using `completedAt` on `Task` and `completedAt` on `FocusSession` grouped by local date.
+  3. Integration tests verifying day-by-day trend buckets.
+

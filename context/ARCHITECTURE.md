@@ -12,16 +12,29 @@ NextTask/
 │   ├── public/                # Static public assets (favicon.svg, icons.svg)
 │   ├── src/
 │   │   ├── components/        # React presentation components
+│   │   │   ├── AuthModal.jsx          # Studio Slate authentication dialog (login/register)
+│   │   │   ├── BulkActionBar.jsx      # Multi-task selection actions floating bar
+│   │   │   ├── CalendarDayModal.jsx   # Day detail & agenda modal
+│   │   │   ├── CalendarView.jsx       # Interactive monthly grid view
+│   │   │   ├── PomodoroTimer.jsx      # Docked focus timer & analytics dashboard
 │   │   │   ├── ProjectCreateModal.jsx # Modal dialog for creating projects
+│   │   │   ├── ProjectEditModal.jsx   # Modal dialog for editing projects
+│   │   │   ├── Sidebar.jsx            # Workspace sidebar with focus views, projects, and user profile
 │   │   │   ├── TaskEditModal.jsx      # Full task editing modal dialog
-│   │   │   └── TaskItem.jsx           # Individual task row with status, meta, and actions
+│   │   │   ├── TaskItem.jsx           # Individual task row with status, meta, and actions
+│   │   │   └── TimelineView.jsx       # Chronological smart timeline schedule
+│   │   ├── context/           # React context providers
+│   │   │   └── AuthContext.jsx        # Session state, JWT storage, login/register/logout methods
 │   │   ├── services/          # API communication abstraction layer
-│   │   │   ├── projectService.js      # Axios HTTP calls to project endpoints
-│   │   │   └── taskService.js         # Axios HTTP calls to task endpoints
+│   │   │   ├── apiClient.js           # Centralized Axios client with Bearer token injection & 401 interceptor
+│   │   │   ├── authService.js         # Authentication endpoints (/api/auth)
+│   │   │   ├── focusSessionService.js # Focus session & metrics endpoints (/api/focus-sessions)
+│   │   │   ├── projectService.js      # Project endpoints (/api/projects)
+│   │   │   └── taskService.js         # Task endpoints (/api/tasks)
 │   │   ├── App.css            # Studio Slate application styles and responsive rules
 │   │   ├── App.jsx            # Main root application component, filter/search state
 │   │   ├── index.css          # Design system CSS tokens, typography, and primitives
-│   │   └── main.jsx           # React root initialization (StrictMode)
+│   │   └── main.jsx           # React root initialization (StrictMode + AuthProvider)
 │   ├── index.html             # Client HTML entry point
 │   ├── package.json           # Client dependencies & scripts (Vite, React 19, Lucide)
 │   ├── vite.config.js         # Vite bundler configuration
@@ -269,15 +282,22 @@ sequenceDiagram
 - **Unified Error Responses**: Authentication errors return `{ message: "Invalid email or password" }` to prevent account enumeration attacks.
 - **Token Expiration**: Default expiration is explicitly set to `7d` (configurable via `JWT_EXPIRES_IN`). Expired tokens are caught and flagged with `{ message: "Not authorized, token expired", code: "TOKEN_EXPIRED" }` to enable predictable client refresh/re-auth flows.
 
-### 7.2 Legacy Task Ownership Problem & Safe Migration Strategy
-- **The Problem**: In Stages 0–5, the application operated as a single-tenant system without user accounts. Existing `Task`, `Project`, and `FocusSession` documents currently have no `user` foreign key.
-- **No Silent Reassignment or Deletion**: When multi-tenant isolation is activated in Milestone 6.2, unowned tasks must not be silently purged or arbitrarily exposed to random users.
-- **Controlled Migration Strategy (Planned for Milestone 6.2)**:
-  1. A standalone migration script (`server/scripts/migrateLegacyTasksToUser.js`) will query unassigned documents (`{ user: { $exists: false } }`).
-  2. The script allows an operator/developer to assign all existing development records to a specified development account (e.g., via `--email admin@example.com` or `--create-dev-user`).
-  3. Schema updates will enforce `user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true }`.
-  4. Task, Project, and FocusSession endpoints will then apply the `protect` middleware, ensuring all database reads, writes, and deletions are scoped strictly to `req.user._id`.
-- **Deferred Frontend UI**: Frontend authentication UI (auth forms, session state, token interceptors) is cleanly deferred to Milestone 6.3 so backend isolation can be verified independently first.
+### 7.2 Legacy Task Ownership & Multi-Tenant Scoping
+- **Completed**: `Task`, `Project`, and `FocusSession` schemas enforce `user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true }`.
+- **Migration & Seeding**:
+  - `migrateLegacyTasksToUser.js`: Safely claims legacy unowned documents.
+  - `seedDevWorkspace.js` (`npm run seed:dev`): Idempotently ensures development user (`dev@nexttask.local` / `DevPassword#2026`) and development projects/tasks/sessions exist on any local developer instance.
+
+### 7.3 Multi-Tab Session Synchronization & Stateless JWT Boundaries
+- **Multi-Tab vs. Cross-Device Synchronization**:
+  - `window.addEventListener("storage", ...)` provides storage event synchronization between tabs and windows of the **same browser origin**.
+  - It does **not** provide cross-device session synchronization. True cross-device state push requires a WebSocket or Server-Sent Events architecture with a server-side session registry (deferred to Stage 8).
+- **Stateless JWT Password Change & Session Invalidation Boundaries**:
+  - Stateless JWTs contain signed identity claims and remain cryptographically valid until expiration (`7d`).
+  - When a user rotates their password, the active device receives a fresh signed JWT. Existing tokens on other devices remain valid until expiration.
+  - Revoking tokens on all devices simultaneously requires server-side token versioning (`tokenVersion` on User document checked per request) or an active token denylist/session store in Redis/MongoDB (deferred to Stage 7 / security hardening).
+- **Email Verification Boundary**:
+  - The application does not include transactional email delivery; account emails are clearly labeled as "Account Email" rather than displaying an unverified verification badge.
 
 ---
 

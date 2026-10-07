@@ -25,6 +25,36 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
     },
+    avatarColor: {
+      type: String,
+      default: "#38bdf8",
+      trim: true,
+      match: [/^#[0-9A-Fa-f]{6}$/, "Invalid avatar hex color format"],
+    },
+    preferences: {
+      pomodoroMinutes: {
+        type: Number,
+        default: 25,
+        min: [1, "Pomodoro duration must be at least 1 minute"],
+        max: [60, "Pomodoro duration cannot exceed 60 minutes"],
+      },
+      shortBreakMinutes: {
+        type: Number,
+        default: 5,
+        min: [1, "Short break must be at least 1 minute"],
+        max: [30, "Short break cannot exceed 30 minutes"],
+      },
+      longBreakMinutes: {
+        type: Number,
+        default: 15,
+        min: [1, "Long break must be at least 1 minute"],
+        max: [45, "Long break cannot exceed 45 minutes"],
+      },
+      soundEnabled: {
+        type: Boolean,
+        default: true,
+      },
+    },
   },
   {
     timestamps: true,

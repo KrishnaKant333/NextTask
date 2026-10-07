@@ -3,7 +3,7 @@ import Task from "../models/Task.js";
 
 export async function getProjects(req, res) {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 });
+        const projects = await Project.find({ user: req.user._id }).sort({ createdAt: -1 });
         res.json(projects);
     } catch (error) {
         console.error("Fetch projects error:", error);
@@ -24,10 +24,21 @@ export async function createProject(req, res) {
             });
         }
 
+        const existing = await Project.findOne({
+            name: name.trim(),
+            user: req.user._id
+        });
+        if (existing) {
+            return res.status(400).json({
+                message: "A project with this name already exists in your account"
+            });
+        }
+
         const project = await Project.create({
             name: name.trim(),
             description: description ? description.trim() : "",
-            color: color || "#6366f1"
+            color: color || "#6366f1",
+            user: req.user._id
         });
 
         res.status(201).json(project);
@@ -54,11 +65,12 @@ export async function updateProject(req, res) {
             }
             const existing = await Project.findOne({
                 name: name.trim(),
+                user: req.user._id,
                 _id: { $ne: id }
             });
             if (existing) {
                 return res.status(400).json({
-                    message: "A project with this name already exists"
+                    message: "A project with this name already exists in your account"
                 });
             }
             updateData.name = name.trim();
@@ -67,8 +79,8 @@ export async function updateProject(req, res) {
         if (color !== undefined) updateData.color = color;
         if (isArchived !== undefined) updateData.isArchived = Boolean(isArchived);
 
-        const updatedProject = await Project.findByIdAndUpdate(
-            id,
+        const updatedProject = await Project.findOneAndUpdate(
+            { _id: id, user: req.user._id },
             updateData,
             {
                 returnDocument: "after",
@@ -96,7 +108,7 @@ export async function deleteProject(req, res) {
     try {
         const { id } = req.params;
 
-        const deletedProject = await Project.findByIdAndDelete(id);
+        const deletedProject = await Project.findOneAndDelete({ _id: id, user: req.user._id });
 
         if (!deletedProject) {
             return res.status(404).json({
@@ -104,8 +116,11 @@ export async function deleteProject(req, res) {
             });
         }
 
-        // Dissociate tasks that belonged to this project (move them to Inbox / null)
-        await Task.updateMany({ projectId: id }, { projectId: null });
+        // Dissociate user's tasks that belonged to this project (move them to Inbox / null)
+        await Task.updateMany(
+            { projectId: id, user: req.user._id },
+            { projectId: null }
+        );
 
         return res.status(200).json({
             message: "Project deleted successfully",

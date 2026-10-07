@@ -75,18 +75,26 @@
 | Milestone 5.2: Task-Bound Focus Sessions & Estimates | `COMPLETED` | Yes | Task estimated/completed Pomodoro schema, atomic PATCH increment, 1-click focus trigger, popover banner, active row highlight |
 | Milestone 5.3: Time Tracking Log & Daily Focus Metrics | `COMPLETED` | Yes | FocusSession model, /today metrics aggregation, daily streaks, project distribution bars, popover stats view |
 
-### Stage 6: User Authentication & Multi-Tenancy (ACTIVE)
+### Stage 6: User Authentication & Multi-Tenancy (COMPLETED)
 | Milestone / Item | Status | Verified In Code | Notes |
 | :--- | :--- | :--- | :--- |
 | Milestone 6.1: User Model, Password Security & JWT Auth API | `COMPLETED` | Yes | User schema, bcryptjs hashing, JWT generation/verification, fail-fast JWT_SECRET check, register/login/me endpoints, isolated test suite |
-| Milestone 6.2: Multi-Tenant Scoping & Task Ownership Migration | `PLANNED` | No | Add `user` ObjectId ref to Task, Project, FocusSession; query scoping; safe migration script for legacy tasks |
-| Milestone 6.3: Frontend Auth UI & Protected Session State | `PLANNED` | No | Auth modal / pages, token storage, authContext, route guards, automatic header token injection |
-| Milestone 6.4: Cross-Device Session Sync & Profile Customization | `PLANNED` | No | Profile editing, avatar, password change, token refresh / revocation |
+| Milestone 6.2: Multi-Tenant Scoping & Task Ownership Migration | `COMPLETED` | Yes | user ObjectId ref in Task, Project, FocusSession; query scoping; safe migration CLI (migrateLegacyTasksToUser.js); test_multi_tenancy.js (45/45 pass) |
+| Milestone 6.3: Frontend Auth UI & Protected Session State | `COMPLETED` | Yes | AuthContext, apiClient Axios interceptors, AuthModal dialog with 1-click dev login, sidebar user profile footer, clean 1.42s build |
+| Milestone 6.4: Multi-Tab Session Synchronization & Profile Customization | `COMPLETED` | Yes | Idempotent seed:dev CLI; ProfileSettingsModal; PUT /profile & PUT /password; avatar palette; Pomodoro preferences; multi-tab storage sync (test_profile.js & test_dev-workspace.js 100% pass) |
+
+### Stage 7: Productivity Analytics & Reporting (IN PROGRESS)
+| Milestone / Item | Status | Verified In Code | Notes |
+| :--- | :--- | :--- | :--- |
+| Milestone 7.1: Analytics Data Foundation & Aggregation Engine | `COMPLETED` | Yes | Added `completedAt` lifecycle in Task model + indexes; timezone-aware day boundary helper; GET `/api/analytics/summary` endpoint; client `analyticsService`; 100% test pass on math, scoping, and lifecycle (`test_analytics_foundation.js`) |
+| Milestone 7.2: Completion Velocity & Focus Trends API | `PLANNED` | No | Daily/weekly rolling velocity and focus time trend aggregations |
+| Milestone 7.3: Project Time & Effort Allocation | `PLANNED` | No | Time distribution across projects and orphan tasks |
+| Milestone 7.4: Productivity Consistency Heatmap | `PLANNED` | No | Year/quarter activity heatmap matrix |
+| Milestone 7.5: Analytics Dashboard & Reporting UX | `PLANNED` | No | Studio Slate dark analytics tab and visualization cards |
 
 ### Long-Term Milestones
 | Milestone / Item | Status | Verified In Code | Notes |
 | :--- | :--- | :--- | :--- |
-| Productivity Analytics Dashboard | `DEFERRED` | No | Scheduled for Stage 7 |
 | Team Collaboration & WebSockets | `DEFERRED` | No | Scheduled for Stage 8 |
 | AI Productivity Assistant | `DEFERRED` | No | Scheduled for Stage 9 |
 

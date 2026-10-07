@@ -1,8 +1,9 @@
-import Task from "../models/Task.js"
+import Task from "../models/Task.js";
+import Project from "../models/Project.js";
 
 export async function getTasks(req, res) {
     try {
-        const filter = {};
+        const filter = { user: req.user._id };
         if (req.query.projectId) {
             if (req.query.projectId === "inbox") {
                 filter.projectId = null;
@@ -38,6 +39,14 @@ export async function createTask(req, res) {
             });
         }
 
+        let resolvedProjectId = null;
+        if (projectId) {
+            const project = await Project.findOne({ _id: projectId, user: req.user._id });
+            if (project) {
+                resolvedProjectId = project._id;
+            }
+        }
+
         const formattedTags = Array.isArray(tags)
             ? Array.from(new Set(tags.map(t => typeof t === "string" ? t.trim().replace(/^#/, "").toLowerCase() : "").filter(Boolean)))
             : [];
@@ -55,14 +64,18 @@ export async function createTask(req, res) {
             ? Math.min(20, Math.max(1, Math.round(estimatedPomodoros)))
             : 1;
 
+        const isCompleted = Boolean(req.body.completed);
         const task = await Task.create({
             title: title.trim(),
+            completed: isCompleted,
+            completedAt: isCompleted ? new Date() : null,
             priority: priority || "medium",
             dueDate: dueDate || null,
-            projectId: projectId || null,
+            projectId: resolvedProjectId,
             tags: formattedTags,
             subtasks: formattedSubtasks,
-            estimatedPomodoros: validEstimatedPomodoros
+            estimatedPomodoros: validEstimatedPomodoros,
+            user: req.user._id
         });
 
         const populatedTask = await Task.findById(task._id).populate("projectId", "name color");
@@ -90,10 +103,20 @@ export async function updateTask(req, res) {
             }
             updateData.title = title.trim();
         }
-        if (completed !== undefined) updateData.completed = Boolean(completed);
+        if (completed !== undefined) {
+            updateData.completed = Boolean(completed);
+            updateData.completedAt = Boolean(completed) ? new Date() : null;
+        }
         if (priority !== undefined) updateData.priority = priority;
         if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
-        if (projectId !== undefined) updateData.projectId = projectId || null;
+        if (projectId !== undefined) {
+            if (projectId) {
+                const project = await Project.findOne({ _id: projectId, user: req.user._id });
+                updateData.projectId = project ? project._id : null;
+            } else {
+                updateData.projectId = null;
+            }
+        }
         if (tags !== undefined) {
             updateData.tags = Array.isArray(tags)
                 ? Array.from(new Set(tags.map(t => typeof t === "string" ? t.trim().replace(/^#/, "").toLowerCase() : "").filter(Boolean)))
@@ -123,8 +146,8 @@ export async function updateTask(req, res) {
             }
         }
 
-        const updatedTask = await Task.findByIdAndUpdate(
-            id,
+        const updatedTask = await Task.findOneAndUpdate(
+            { _id: id, user: req.user._id },
             updateData,
             {
                 returnDocument: "after",
@@ -151,8 +174,8 @@ export async function updateTask(req, res) {
 export async function incrementTaskPomodoro(req, res) {
     try {
         const { id } = req.params;
-        const updatedTask = await Task.findByIdAndUpdate(
-            id,
+        const updatedTask = await Task.findOneAndUpdate(
+            { _id: id, user: req.user._id },
             { $inc: { pomodorosCompleted: 1 } },
             {
                 returnDocument: "after",
@@ -178,7 +201,7 @@ export async function incrementTaskPomodoro(req, res) {
 export async function toggleSubtask(req, res) {
     try {
         const { id, subtaskId } = req.params;
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, user: req.user._id });
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
@@ -204,7 +227,7 @@ export async function deleteTask(req, res) {
     try {
         const { id } = req.params;
 
-        const deletedTask = await Task.findByIdAndDelete(id);
+        const deletedTask = await Task.findOneAndDelete({ _id: id, user: req.user._id });
 
         if (!deletedTask) {
             return res.status(404).json({
@@ -238,9 +261,15 @@ export async function bulkUpdateTasks(req, res) {
         const allowedFields = {};
         if (typeof updates.completed === "boolean") {
             allowedFields.completed = updates.completed;
+            allowedFields.completedAt = updates.completed ? new Date() : null;
         }
         if (updates.projectId !== undefined) {
-            allowedFields.projectId = updates.projectId || null;
+            if (updates.projectId) {
+                const project = await Project.findOne({ _id: updates.projectId, user: req.user._id });
+                allowedFields.projectId = project ? project._id : null;
+            } else {
+                allowedFields.projectId = null;
+            }
         }
 
         const mongoUpdate = {};
@@ -258,9 +287,9 @@ export async function bulkUpdateTasks(req, res) {
             return res.status(400).json({ message: "No valid updates specified" });
         }
 
-        await Task.updateMany({ _id: { $in: ids } }, mongoUpdate);
+        await Task.updateMany({ _id: { $in: ids }, user: req.user._id }, mongoUpdate);
 
-        const updatedTasks = await Task.find({ _id: { $in: ids } }).populate("projectId", "name color");
+        const updatedTasks = await Task.find({ _id: { $in: ids }, user: req.user._id }).populate("projectId", "name color");
         res.json({
             message: `Successfully updated ${updatedTasks.length} tasks`,
             tasks: updatedTasks
@@ -281,7 +310,7 @@ export async function bulkDeleteTasks(req, res) {
             return res.status(400).json({ message: "Task IDs array is required" });
         }
 
-        const result = await Task.deleteMany({ _id: { $in: ids } });
+        const result = await Task.deleteMany({ _id: { $in: ids }, user: req.user._id });
         res.json({
             message: `Successfully deleted ${result.deletedCount} tasks`,
             deletedCount: result.deletedCount,

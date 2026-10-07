@@ -7,6 +7,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import focusSessionRoutes from "./routes/focusSessionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 
 // Fail-fast environment validation
 if (!process.env.JWT_SECRET) {
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/focus-sessions", focusSessionRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
